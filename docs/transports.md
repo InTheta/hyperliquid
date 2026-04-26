@@ -63,6 +63,38 @@ const transport = new HttpTransport({
 });
 ```
 
+### Rate limiting
+
+HTTP rate limiting is opt-in. When enabled, the transport uses a token bucket and retries HTTP `429` responses with
+backoff. Defaults match Hyperliquid's documented request bucket: 100 token capacity and 10 tokens per second refill.
+
+```ts
+import { HttpTransport } from "@nktkas/hyperliquid";
+
+const transport = new HttpTransport({
+  rateLimit: true,
+});
+```
+
+Tune or share the limiter when several clients use the same request budget:
+
+```ts
+import { HttpTransport, TokenBucketRateLimiter } from "@nktkas/hyperliquid";
+
+const limiter = new TokenBucketRateLimiter({
+  capacity: 100,
+  refillRate: 10,
+});
+
+const transport = new HttpTransport({
+  rateLimit: {
+    limiter,
+    requestWeight: 1,
+    maxRetries: 3,
+  },
+});
+```
+
 ## WebSocket
 
 ```ts
@@ -146,6 +178,26 @@ const transport = new WebSocketTransport({ resubscribe: false });
 
 If a subscription fails to restore, its `failureSignal` is aborted. For details, see
 [Handle failures](clients.md#handle-failures).
+
+### Keep alive and subscription count
+
+The WebSocket transport sends ping messages and tracks `pong` responses. If no pong arrives within the configured
+timeout, the current socket is closed so the reconnect flow can restore the connection and resubscribe.
+
+```ts
+const transport = new WebSocketTransport({
+  keepAlive: {
+    intervalMs: 30_000,
+    pongTimeoutMs: 60_000,
+  },
+});
+```
+
+Use `getSubscriptionCount()` to monitor active unique subscriptions on the connection:
+
+```ts
+const count = transport.getSubscriptionCount();
+```
 
 ## Common options
 

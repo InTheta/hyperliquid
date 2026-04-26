@@ -8,12 +8,43 @@ import {
 } from "../api/info/mod.ts";
 import type { IRequestTransport } from "../transport/mod.ts";
 
+function normalizeSpotPairId(value: unknown): string {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (/^\d+$/.test(text)) return `@${text}`;
+  return text;
+}
+
+function uniqueNames(values: unknown[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    out.push(text);
+  }
+  return out;
+}
+
 /** Options for creating a {@link SymbolConverter} instance. */
 export interface SymbolConverterOptions {
   /** Transport instance to use for API requests. */
   transport: IRequestTransport;
   /** Optional dex support: array of dex names, true for all dexs, or false/undefined to skip. */
   dexs?: string[] | boolean;
+  /**
+   * Automatically refresh asset mappings on an interval.
+   *
+   * Default: `false`
+   */
+  autoRefresh?: boolean;
+  /**
+   * Interval for automatic asset mapping refreshes in ms.
+   *
+   * Default: `60_000`
+   */
+  refreshIntervalMs?: number;
 }
 
 /**
@@ -53,6 +84,9 @@ export class SymbolConverter {
   private _nameToSzDecimals = new Map<string, number>();
   private _nameToSpotPairId = new Map<string, string>();
   private _spotPairIdToName = new Map<string, string>();
+  private _refreshIntervalMs: number;
+  private _refreshTimer: ReturnType<typeof setInterval> | undefined;
+  private _autoRefresh: boolean;
 
   /**
    * Creates a new SymbolConverter instance, but does not initialize it.
@@ -63,6 +97,8 @@ export class SymbolConverter {
   constructor(options: SymbolConverterOptions) {
     this._transport = options.transport;
     this._dexOption = options.dexs ?? false;
+    this._refreshIntervalMs = options.refreshIntervalMs ?? 60_000;
+    this._autoRefresh = options.autoRefresh ?? false;
   }
 
   /**
@@ -121,12 +157,77 @@ export class SymbolConverter {
     if (perpDexsData) {
       await this._processBuilderDexs(perpDexsData);
     }
+
+    if (this._autoRefresh && !this.isAutoRefreshEnabled()) this.startAutoRefresh();
+  }
+
+  /** Alias for {@link reload}. */
+  refreshNow(): Promise<void> {
+    return this.reload();
+  }
+
+  /**
+   * Starts automatic refresh of asset mappings.
+   *
+   * @param intervalMs Optional interval override in milliseconds.
+   */
+  startAutoRefresh(intervalMs?: number): void {
+    if (intervalMs !== undefined) this._setRefreshInterval(intervalMs);
+    this._autoRefresh = true;
+    this._clearRefreshTimer();
+    this._refreshTimer = setInterval(() => {
+      void this.reload().catch(() => undefined);
+    }, this._refreshIntervalMs);
+  }
+
+  /** Stops automatic refresh of asset mappings. */
+  stopAutoRefresh(): void {
+    this._autoRefresh = false;
+    this._clearRefreshTimer();
+  }
+
+  /** Returns whether automatic refresh is currently active. */
+  isAutoRefreshEnabled(): boolean {
+    return this._refreshTimer !== undefined;
+  }
+
+  /**
+   * Sets the automatic refresh interval.
+   *
+   * Restarts automatic refresh if it is currently active.
+   *
+   * @param intervalMs Interval in milliseconds.
+   */
+  setAutoRefreshInterval(intervalMs: number): void {
+    this._setRefreshInterval(intervalMs);
+    if (this.isAutoRefreshEnabled()) this.startAutoRefresh();
+  }
+
+  private _setRefreshInterval(intervalMs: number): void {
+    if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
+      throw new RangeError("Interval must be greater than 0");
+    }
+    this._refreshIntervalMs = intervalMs;
+  }
+
+  private _clearRefreshTimer(): void {
+    clearInterval(this._refreshTimer);
+    this._refreshTimer = undefined;
   }
 
   private _processDefaultPerps(perpMetaData: MetaResponse): void {
     perpMetaData.universe.forEach((asset, index) => {
-      this._nameToAssetId.set(asset.name, index);
-      this._nameToSzDecimals.set(asset.name, asset.szDecimals);
+      this._setNameAliases(
+        [
+          asset.name,
+          `${asset.name}-PERP`,
+          `main:${asset.name}`,
+          `main:${asset.name}-PERP`,
+        ],
+        index,
+        asset.szDecimals,
+        false,
+      );
     });
   }
 
@@ -155,17 +256,34 @@ export class SymbolConverter {
 
     results.forEach((result, idx) => {
       if (result.status !== "fulfilled") return;
-      this._processBuilderDexResult(result.value, dexsToProcess[idx].index);
+      this._processBuilderDexResult(result.value, dexsToProcess[idx].index, dexsToProcess[idx].dex.name);
     });
   }
 
-  private _processBuilderDexResult(dexMeta: MetaResponse, perpDexIndex: number): void {
+  private _processBuilderDexResult(dexMeta: MetaResponse, perpDexIndex: number, dexName: string): void {
     const offset = 100000 + perpDexIndex * 10000;
+    const normalizedDexName = String(dexName || "").trim();
 
     dexMeta.universe.forEach((asset, index) => {
       const assetId = offset + index;
-      this._nameToAssetId.set(asset.name, assetId);
-      this._nameToSzDecimals.set(asset.name, asset.szDecimals);
+      const name = asset.name;
+      const coin = normalizedDexName && name.startsWith(`${normalizedDexName}:`)
+        ? name.slice(normalizedDexName.length + 1)
+        : name;
+      const qualifiedName = normalizedDexName ? `${normalizedDexName}:${coin}` : coin;
+      this._setNameAliases(
+        [
+          qualifiedName,
+          `${qualifiedName}-PERP`,
+          name,
+          `${name}-PERP`,
+          coin,
+          `${coin}-PERP`,
+        ],
+        assetId,
+        asset.szDecimals,
+        true,
+      );
     });
   }
 
@@ -183,11 +301,50 @@ export class SymbolConverter {
 
       const assetId = 10000 + market.index;
       const baseQuoteKey = `${baseToken.name}/${quoteToken.name}`;
-      this._nameToAssetId.set(baseQuoteKey, assetId);
-      this._nameToSzDecimals.set(baseQuoteKey, baseToken.szDecimals);
-      this._nameToSpotPairId.set(baseQuoteKey, market.name);
-      this._spotPairIdToName.set(market.name, baseQuoteKey);
+      const spotPairId = normalizeSpotPairId(market.name || market.index);
+      const canonicalPairId = `@${market.index}`;
+      const isUsdcPair = quoteToken.name === "USDC";
+      this._setNameAliases(
+        [
+          baseQuoteKey,
+          isUsdcPair ? `${baseToken.name}-SPOT` : undefined,
+          spotPairId,
+          canonicalPairId,
+          String(market.index),
+          assetId,
+        ],
+        assetId,
+        baseToken.szDecimals,
+        true,
+      );
+      for (
+        const name of uniqueNames([
+          baseQuoteKey,
+          isUsdcPair ? `${baseToken.name}-SPOT` : undefined,
+          spotPairId,
+          canonicalPairId,
+          market.index,
+        ])
+      ) {
+        this._nameToSpotPairId.set(name, spotPairId);
+      }
+      this._spotPairIdToName.set(spotPairId, baseQuoteKey);
+      this._spotPairIdToName.set(canonicalPairId, baseQuoteKey);
+      this._spotPairIdToName.set(String(market.index), baseQuoteKey);
     });
+  }
+
+  private _setNameAliases(
+    names: unknown[],
+    assetId: number,
+    szDecimals: number,
+    preserveExisting: boolean,
+  ): void {
+    for (const name of uniqueNames(names)) {
+      if (preserveExisting && this._nameToAssetId.has(name)) continue;
+      this._nameToAssetId.set(name, assetId);
+      this._nameToSzDecimals.set(name, szDecimals);
+    }
   }
 
   /**
@@ -275,6 +432,6 @@ export class SymbolConverter {
    * ```
    */
   getSymbolBySpotPairId(pairId: string): string | undefined {
-    return this._spotPairIdToName.get(pairId);
+    return this._spotPairIdToName.get(normalizeSpotPairId(pairId));
   }
 }

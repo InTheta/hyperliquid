@@ -4,6 +4,7 @@
  * This module re-exports utilities for:
  * - Formatting prices and sizes according to Hyperliquid's {@link https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size | tick and lot size rules} ({@link formatPrice}, {@link formatSize}).
  * - Converting human-readable asset symbols to Hyperliquid asset IDs ({@link SymbolConverter}).
+ * - Caching market metadata, contexts, mids, funding, and order precision ({@link HyperliquidMarketCache}).
  *
  * @example Formatting values for an order
  * ```ts
@@ -24,4 +25,5 @@
  */
 
 export * from "./_symbolConverter.ts";
+export * from "./_marketCache.ts";
 export { formatPrice, formatSize } from "./_format.ts";

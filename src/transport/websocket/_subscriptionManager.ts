@@ -137,6 +137,11 @@ export class WebSocketSubscriptionManager {
     };
   }
 
+  /** Returns the number of active unique WebSocket subscriptions. */
+  getSubscriptionCount(): number {
+    return this._subscriptions.size;
+  }
+
   // ============================================================
   // Socket event handlers
   // ============================================================

@@ -268,7 +268,8 @@ const subscription = await client.allMids((data) => {
 
 A single connection supports up to
 [1000 active subscriptions and 10 unique users](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits).
-Call `unsubscribe()` to remove a listener and free these slots:
+The SDK enforces these limits, reuses duplicate subscriptions, and exposes the active unique subscription count on
+`WebSocketTransport`. Call `unsubscribe()` to remove a listener and free these slots:
 
 ```ts
 const subscription = await client.allMids((data) => {

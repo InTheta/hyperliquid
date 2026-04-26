@@ -65,7 +65,7 @@ function createTestServer(): AsyncDisposable {
               data: { id: data.id, response: { type: "info", payload: { data: "response-success" } } },
             });
           }
-        } else if (data.method === "ping") {
+        } else if (data.method === "ping" && testCase !== "no-pong") {
           send({ channel: "pong" });
         } else if (data.method === "subscribe") {
           send({
@@ -129,6 +129,37 @@ Deno.test("WebSocketTransport", async (t) => {
     assertEquals(received, { update: "subscription update" });
 
     await subscription.unsubscribe();
+  });
+
+  await t.step("getSubscriptionCount() tracks active unique subscriptions", async () => {
+    await using transport = createTransport("request-success");
+    await transport.ready();
+
+    const payload = { channel: "test-channel", foo: "count" };
+    const sub1 = await transport.subscribe("test-channel", payload, () => {});
+    const sub2 = await transport.subscribe("test-channel", payload, () => {});
+
+    assertEquals(transport.getSubscriptionCount(), 1);
+
+    await sub1.unsubscribe();
+    assertEquals(transport.getSubscriptionCount(), 1);
+
+    await sub2.unsubscribe();
+    assertEquals(transport.getSubscriptionCount(), 0);
+  });
+
+  await t.step("keep-alive closes stale connections when pong is missing", async () => {
+    await using transport = createTransport("no-pong", {
+      keepAlive: {
+        intervalMs: 10,
+        pongTimeoutMs: 1,
+      },
+    });
+    await transport.ready();
+
+    await new Promise<void>((resolve) => {
+      transport.socket.addEventListener("close", () => resolve(), { once: true });
+    });
   });
 
   await t.step("ready()", async (t) => {

@@ -91,7 +91,8 @@ export function allMids(
     dex: params.dex || undefined, // Same value as in response
   });
   return config.transport.subscribe<AllMidsEvent>(payload.type, payload, (e) => {
-    if (e.detail.dex === payload.dex) {
+    const detailDex = e.detail.dex || undefined;
+    if (detailDex === payload.dex) {
       listener(e.detail);
     }
   });

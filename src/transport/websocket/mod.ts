@@ -63,6 +63,17 @@ export interface WebSocketTransportOptions {
    * Default: `true`
    */
   resubscribe?: boolean;
+  /**
+   * Keep-alive ping/pong settings. Set to `false` to disable.
+   *
+   * Default: `{ intervalMs: 30_000, pongTimeoutMs: 60_000 }`
+   */
+  keepAlive?: boolean | {
+    /** Interval between ping messages in ms. */
+    intervalMs?: number;
+    /** Maximum time since the last pong before forcing a reconnect. */
+    pongTimeoutMs?: number;
+  };
 }
 
 /** Mainnet API WebSocket URL. */
@@ -104,7 +115,9 @@ export class WebSocketTransport implements IRequestTransport, ISubscriptionTrans
   protected readonly _postRequest: WebSocketPostRequest;
   protected readonly _hlEvents: HyperliquidEventTarget;
   protected readonly _subscriptionManager: WebSocketSubscriptionManager;
+  protected readonly _keepAlive: NormalizedKeepAliveOptions | undefined;
   protected _keepAliveInterval: ReturnType<typeof setInterval> | undefined;
+  protected _lastPongAt = 0;
 
   /**
    * Creates a new WebSocket transport instance.
@@ -131,8 +144,9 @@ export class WebSocketTransport implements IRequestTransport, ISubscriptionTrans
       this._hlEvents,
       options?.resubscribe ?? true,
     );
+    this._keepAlive = normalizeKeepAliveOptions(options?.keepAlive);
 
-    this._initKeepAlive();
+    if (this._keepAlive) this._initKeepAlive(this._keepAlive);
   }
 
   // ============================================================
@@ -171,6 +185,11 @@ export class WebSocketTransport implements IRequestTransport, ISubscriptionTrans
     listener: (data: CustomEvent<T>) => void,
   ): Promise<ISubscription> {
     return this._subscriptionManager.subscribe(channel, payload, listener);
+  }
+
+  /** Returns the number of active unique WebSocket subscriptions. */
+  getSubscriptionCount(): number {
+    return this._subscriptionManager.getSubscriptionCount();
   }
 
   /**
@@ -233,7 +252,10 @@ export class WebSocketTransport implements IRequestTransport, ISubscriptionTrans
       }
 
       // Check if already closed
-      if (this.socket.readyState === ReconnectingWebSocket.CLOSED) return resolve();
+      if (this.socket.readyState === ReconnectingWebSocket.CLOSED) {
+        this.socket.close();
+        return resolve();
+      }
 
       // Set up event listeners
       const handleClose = () => {
@@ -259,20 +281,51 @@ export class WebSocketTransport implements IRequestTransport, ISubscriptionTrans
   // Keep-Alive Logic
   // ============================================================
 
-  protected _initKeepAlive(): void {
+  protected _initKeepAlive(options: NormalizedKeepAliveOptions): void {
+    const markPong = () => {
+      this._lastPongAt = Date.now();
+    };
     const start = () => {
       if (this._keepAliveInterval) return;
+      markPong();
       this._keepAliveInterval = setInterval(() => {
+        if (this.socket.readyState !== ReconnectingWebSocket.OPEN) return;
+        if (Date.now() - this._lastPongAt > options.pongTimeoutMs) {
+          this.socket.close(3009, "Pong timeout", false);
+          return;
+        }
         this.socket.send('{"method":"ping"}');
-      }, 30_000);
+      }, options.intervalMs);
     };
     const stop = () => {
       clearInterval(this._keepAliveInterval);
       this._keepAliveInterval = undefined;
     };
 
+    this._hlEvents.addEventListener("pong", markPong);
     this.socket.addEventListener("open", start);
     this.socket.addEventListener("close", stop);
     this.socket.addEventListener("error", stop);
   }
+}
+
+interface NormalizedKeepAliveOptions {
+  intervalMs: number;
+  pongTimeoutMs: number;
+}
+
+function normalizeKeepAliveOptions(
+  value: WebSocketTransportOptions["keepAlive"] | undefined,
+): NormalizedKeepAliveOptions | undefined {
+  if (value === false) return undefined;
+  const options = typeof value === "object" ? value : {};
+  const intervalMs = options.intervalMs ?? 30_000;
+  const pongTimeoutMs = options.pongTimeoutMs ?? 60_000;
+  if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
+    throw new RangeError("Keep-alive interval must be greater than 0");
+  }
+  if (!Number.isFinite(pongTimeoutMs) || pongTimeoutMs <= 0) {
+    throw new RangeError("Pong timeout must be greater than 0");
+  }
+  return { intervalMs, pongTimeoutMs };
 }

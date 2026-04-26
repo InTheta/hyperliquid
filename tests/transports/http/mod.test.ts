@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-import-prefix
 
 import { assert, assertEquals, assertIsError, assertRejects } from "jsr:@std/assert@1";
-import { HttpRequestError, HttpTransport } from "@nktkas/hyperliquid";
+import { HttpRequestError, HttpTransport, TokenBucketRateLimiter } from "@nktkas/hyperliquid";
 
 // ============================================================
 // Helpers
@@ -17,6 +17,20 @@ function mockFetch(handler: (input: RequestInfo | URL, init?: RequestInit) => Re
       globalThis.fetch = originalFetch;
     }
   };
+}
+
+/** Scoped mock for global fetch. */
+async function withMockFetch<T>(
+  handler: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = handler as typeof fetch;
+  try {
+    return await fn();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 /** Returns a successful JSON response. */
@@ -51,6 +65,26 @@ const URL_EXPECTATIONS = {
 // ============================================================
 
 Deno.test("HttpTransport", async (t) => {
+  await t.step("TokenBucketRateLimiter waits before consuming empty bucket", async () => {
+    let now = 0;
+    const sleeps: number[] = [];
+    const limiter = new TokenBucketRateLimiter({
+      capacity: 1,
+      refillRate: 2,
+      initialTokens: 0,
+      now: () => now,
+      sleep: (ms) => {
+        sleeps.push(ms);
+        now += ms;
+        return Promise.resolve();
+      },
+    });
+
+    await limiter.waitForToken();
+
+    assertEquals(sleeps, [500]);
+  });
+
   await t.step("URL routing", async (t) => {
     await t.step("mainnet (default)", async (t) => {
       const transport = new HttpTransport();
@@ -97,6 +131,54 @@ Deno.test("HttpTransport", async (t) => {
         return jsonResponse();
       });
       await transport.request("explorer", {});
+    });
+
+    await t.step("rateLimit retries HTTP 429 responses", async () => {
+      let calls = 0;
+      const sleeps: number[] = [];
+      await withMockFetch(
+        () => {
+          calls++;
+          if (calls === 1) {
+            return new Response("too many requests", {
+              status: 429,
+              headers: { "Retry-After": "0.25" },
+            });
+          }
+          return jsonResponse({ data: "retried" });
+        },
+        async () => {
+          const transport = new HttpTransport({
+            rateLimit: {
+              sleep: (ms) => {
+                sleeps.push(ms);
+                return Promise.resolve();
+              },
+            },
+          });
+          const result = await transport.request("info", {});
+          assertEquals(result, { data: "retried" });
+        },
+      );
+
+      assertEquals(calls, 2);
+      assertEquals(sleeps, [250]);
+    });
+
+    await t.step("HTTP 429 is not retried by default", async () => {
+      let calls = 0;
+      await withMockFetch(
+        () => {
+          calls++;
+          return new Response("too many requests", { status: 429 });
+        },
+        async () => {
+          const transport = new HttpTransport();
+          await assertRejects(() => transport.request("info", {}), HttpRequestError);
+        },
+      );
+
+      assertEquals(calls, 1);
     });
   });
 

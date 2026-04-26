@@ -94,6 +94,7 @@ Deno.test("WebSocketSubscriptionManager", async (t) => {
       // Confirm subscription
       socket.mockMessage(RESPONSES.subscriptionResponse("subscribe", payload));
       const sub = await subPromise;
+      assertEquals(manager.getSubscriptionCount(), 1);
 
       // Send event
       socket.mockMessage(RESPONSES.channelEvent("test", { update: "subscription update" }));
@@ -105,6 +106,7 @@ Deno.test("WebSocketSubscriptionManager", async (t) => {
       await unsubPromise;
 
       assert(manager._subscriptions.size === 0);
+      assertEquals(manager.getSubscriptionCount(), 0);
     });
 
     await t.step("duplicate listener is not added twice", async () => {
