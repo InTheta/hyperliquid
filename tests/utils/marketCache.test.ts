@@ -110,7 +110,36 @@ class MockInfoTransport implements IRequestTransport {
       return Promise.resolve({ CCC: "1.25" } as T);
     }
     if (req.type === "allMids") {
-      return Promise.resolve({ BTC: "100010", ETH: "2999", "@107": "100002" } as T);
+      return Promise.resolve({ BTC: "100010", ETH: "2999", "@107": "100002", "#52360": "0.4", "#52361": "0.6" } as T);
+    }
+
+    if (req.type === "outcomeMeta") {
+      return Promise.resolve({
+        outcomes: [
+          {
+            outcome: 5236,
+            name: "Recurring",
+            description: "class:priceBinary|underlying:BTC|expiry:20260427-0300|targetPrice:77516|period:1d",
+            sideSpecs: [{ name: "Yes" }, { name: "No" }],
+          },
+          {
+            outcome: 9,
+            name: "Who will win the HL 100 meter dash?",
+            description: "This race is yet to be scheduled.",
+            sideSpecs: [{ name: "Hypurr", token: 90 }, { name: "Usain Bolt", token: 91 }],
+          },
+        ],
+        questions: [
+          {
+            question: 1,
+            name: "Will BTC close above target?",
+            description: "A testnet HIP-4 binary price question.",
+            fallbackOutcome: 9,
+            namedOutcomes: [5236],
+            settledNamedOutcomes: [],
+          },
+        ],
+      } as T);
     }
 
     if (req.type === "predictedFundings") {
@@ -476,6 +505,47 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.getMid("dexA:AAA"), "12.5");
     assertEquals(cache.getMid("dexC:CCC"), "1.25");
     assertEquals(cache.getMid("@107"), "100002");
+  });
+
+  await t.step("HIP-4 outcome metadata is opt-in and allMids overlays prediction mids", async () => {
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      caches: { outcomeMeta: true, allMids: true },
+    });
+
+    await cache.refresh();
+
+    assertEquals(countRequests(transport, (p) => p.type === "outcomeMeta"), 1);
+    assertEquals(cache.resolveMarket("#52360"), undefined);
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.coin, "#52360");
+    assertEquals(cache.resolvePredictionMarket("52360")?.sideName, "Yes");
+    assertEquals(cache.resolveOutcomeMarket("#52361")?.sideName, "No");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.outcomeClass, "priceBinary");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.underlying, "BTC");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.expiry, "20260427-0300");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.targetPrice, "77516");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.period, "1d");
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.questionId, 1);
+    assertEquals(cache.getOutcomeMarkets({ outcomeId: 5236 }).map((row) => row.coin), ["#52360", "#52361"]);
+    assertEquals(cache.getOutcomeMarkets({ questionId: 1 }).map((row) => row.coin), ["#52360", "#52361", "#90", "#91"]);
+    assertEquals(cache.getOutcomeMid("#52360"), "0.4");
+    assertEquals(cache.getOutcomeMid(52361), "0.6");
+  });
+
+  await t.step("live allMids updates HIP-4 outcome mids without creating perp or spot markets", async () => {
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      caches: { outcomeMeta: true },
+    });
+
+    await cache.refresh();
+    cache.applyAllMids({ "#52360": "0.41", BTC: "100040" });
+
+    assertEquals(cache.getOutcomeMid("#52360"), "0.41");
+    assertEquals(cache.resolveMarket("#52360"), undefined);
+    assertEquals(cache.getMid("BTC"), undefined);
   });
 
   await t.step("live allMids updates default, spot, and configured builder dex mids", async () => {

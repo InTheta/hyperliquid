@@ -299,6 +299,46 @@ await cache.getFundingHistory({
 });
 ```
 
+### HIP-4 outcome and prediction markets
+
+The SDK already exposes the raw `outcomeMeta()` info endpoint. `HyperliquidMarketCache` adds an opt-in cache layer for
+apps that want to display HIP-4 outcome markets alongside perps and spot markets:
+
+```ts
+const cache = new HyperliquidMarketCache({
+  transport,
+  caches: {
+    outcomeMeta: true,
+    allMids: true,
+  },
+});
+
+await cache.refresh();
+
+const yes = cache.resolveOutcomeMarket("#52360");
+
+yes?.outcomeName; // "Recurring"
+yes?.sideName; // "Yes"
+yes?.outcomeClass; // "priceBinary" when encoded in the description
+yes?.underlying; // "BTC" when encoded in the description
+yes?.expiry;
+yes?.targetPrice;
+yes?.mid; // overlaid from allMids when available
+```
+
+`outcomeMeta` is discovery metadata for HIP-4 outcomes/questions. The `allMids` feed can include `#...` outcome leg
+mids, and the cache overlays those onto outcome records. Outcome records are intentionally separate from
+`resolveMarket()` and order-ticket precision because HIP-4 testnet outcomes are not represented in the normal perp/spot
+metadata maps.
+
+For prediction-market naming, `resolvePredictionMarket()` is an alias of `resolveOutcomeMarket()`:
+
+```ts
+cache.resolvePredictionMarket(52360);
+cache.getOutcomeMarkets({ questionId: 1 });
+cache.getOutcomeMid("#52360");
+```
+
 ### Live all-DEX streams
 
 REST metadata refresh remains the source of truth for symbols, spot `@id` mappings, precision, max leverage, and builder

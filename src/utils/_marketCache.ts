@@ -6,6 +6,8 @@ import {
   type FundingHistoryResponse,
   metaAndAssetCtxs,
   type MetaAndAssetCtxsResponse,
+  outcomeMeta,
+  type OutcomeMetaResponse,
   perpDexs,
   predictedFundings,
   type PredictedFundingsResponse,
@@ -32,6 +34,7 @@ export type HyperliquidMarketCacheKey =
   | "allMids"
   | "allDexsAssetCtxs"
   | "allDexsClearinghouseState"
+  | "outcomeMeta"
   | "predictedFundings"
   | "fundingHistory";
 
@@ -102,6 +105,38 @@ export interface HyperliquidMarketRecord {
   context?: Record<string, unknown> | null;
   mid?: string;
   fundingRate?: string;
+}
+
+/** HIP-4 outcome/prediction side resolved from `outcomeMeta`. */
+export interface HyperliquidOutcomeMarketRecord {
+  /** Trade/API coin key used by allMids, such as `#52360`. */
+  coin: string;
+  /** Numeric coin key without the leading `#`. */
+  tokenId: number;
+  /** Outcome identifier from `outcomeMeta`. */
+  outcomeId: number;
+  /** Side index inside the outcome's `sideSpecs`. */
+  sideIndex: number;
+  /** Side display name, for example `Yes` or `No`. */
+  sideName: string;
+  outcomeName: string;
+  outcomeDescription: string;
+  questionId?: number;
+  questionName?: string;
+  questionDescription?: string;
+  fallbackOutcome?: number;
+  isSettled?: boolean;
+  /** Parsed `class:*` value from description strings when present, e.g. `priceBinary`. */
+  outcomeClass?: string;
+  /** Parsed `underlying:*` value from description strings when present. */
+  underlying?: string;
+  /** Parsed `expiry:*` value from description strings when present. */
+  expiry?: string;
+  /** Parsed `targetPrice:*` value from description strings when present. */
+  targetPrice?: string;
+  /** Parsed `period:*` value from description strings when present. */
+  period?: string;
+  mid?: string;
 }
 
 /** Order-ticket precision resolved for a market. */
@@ -181,6 +216,10 @@ export interface HyperliquidMarketCacheSnapshot {
   unmappedAllDexsAssetCtxs: HyperliquidUnmappedAssetCtx[];
   needsMetadataRefresh: boolean;
   rawAllDexsClearinghouseStateByUser: Record<string, Record<string, ClearinghouseStateResponse>>;
+  rawOutcomeMeta: OutcomeMetaResponse | null;
+  outcomeMarketsByCoin: Record<string, HyperliquidOutcomeMarketRecord>;
+  outcomeMarketsByOutcome: Record<string, HyperliquidOutcomeMarketRecord[]>;
+  outcomeMarketsByQuestion: Record<string, HyperliquidOutcomeMarketRecord[]>;
   rawPredictedFundings: PredictedFundingsResponse | null;
   rawFundingHistoryByKey: Record<string, FundingHistoryResponse>;
 }
@@ -199,6 +238,7 @@ const DEFAULT_POLICIES: Record<HyperliquidMarketCacheKey, NormalizedPolicy> = {
   allMids: { enabled: false, persist: false, ttlMs: 1_000, refreshIntervalMs: 1_000 },
   allDexsAssetCtxs: { enabled: false, persist: false, ttlMs: 1_000, refreshIntervalMs: undefined },
   allDexsClearinghouseState: { enabled: false, persist: false, ttlMs: 1_000, refreshIntervalMs: undefined },
+  outcomeMeta: { enabled: false, persist: true, ttlMs: 5 * 60_000, refreshIntervalMs: 5 * 60_000 },
   predictedFundings: { enabled: false, persist: false, ttlMs: 60_000, refreshIntervalMs: 60_000 },
   fundingHistory: { enabled: false, persist: false, ttlMs: 5 * 60_000, refreshIntervalMs: 5 * 60_000 },
 };
@@ -220,6 +260,10 @@ function emptySnapshot(): HyperliquidMarketCacheSnapshot {
     unmappedAllDexsAssetCtxs: [],
     needsMetadataRefresh: false,
     rawAllDexsClearinghouseStateByUser: {},
+    rawOutcomeMeta: null,
+    outcomeMarketsByCoin: {},
+    outcomeMarketsByOutcome: {},
+    outcomeMarketsByQuestion: {},
     rawPredictedFundings: null,
     rawFundingHistoryByKey: {},
   };
@@ -412,6 +456,23 @@ function normalizePerpCtx(ctx: unknown): Record<string, unknown> | null {
   return isRecord(ctx) ? ctx : null;
 }
 
+function parseOutcomeDescription(description: string): Partial<HyperliquidOutcomeMarketRecord> {
+  const out: Partial<HyperliquidOutcomeMarketRecord> = {};
+  for (const part of description.split("|")) {
+    const separator = part.indexOf(":");
+    if (separator < 0) continue;
+    const key = part.slice(0, separator).trim();
+    const value = part.slice(separator + 1).trim();
+    if (!value) continue;
+    if (key === "class") out.outcomeClass = value;
+    if (key === "underlying") out.underlying = value;
+    if (key === "expiry") out.expiry = value;
+    if (key === "targetPrice") out.targetPrice = value;
+    if (key === "period") out.period = value;
+  }
+  return out;
+}
+
 /**
  * Opt-in market metadata/context cache for Hyperliquid applications.
  *
@@ -448,6 +509,7 @@ export class HyperliquidMarketCache {
         "allDexsClearinghouseState",
         options.caches?.allDexsClearinghouseState,
       ),
+      outcomeMeta: normalizePolicy("outcomeMeta", options.caches?.outcomeMeta),
       predictedFundings: normalizePolicy("predictedFundings", options.caches?.predictedFundings),
       fundingHistory: normalizePolicy("fundingHistory", options.caches?.fundingHistory),
     };
@@ -509,6 +571,12 @@ export class HyperliquidMarketCache {
         this._snapshot.needsMetadataRefresh = false;
       }
       if (key === "allDexsClearinghouseState") this._snapshot.rawAllDexsClearinghouseStateByUser = {};
+      if (key === "outcomeMeta") {
+        this._snapshot.rawOutcomeMeta = null;
+        this._snapshot.outcomeMarketsByCoin = {};
+        this._snapshot.outcomeMarketsByOutcome = {};
+        this._snapshot.outcomeMarketsByQuestion = {};
+      }
       if (key === "predictedFundings") this._snapshot.rawPredictedFundings = null;
       if (key === "fundingHistory") this._snapshot.rawFundingHistoryByKey = {};
     }
@@ -526,6 +594,7 @@ export class HyperliquidMarketCache {
       await this._refreshMetadataAndContexts(unique.has("metadata"), unique.has("contexts"));
     }
     if (unique.has("allMids")) await this._refreshAllMids();
+    if (unique.has("outcomeMeta")) await this._refreshOutcomeMeta();
     if (unique.has("predictedFundings")) await this._refreshPredictedFundings();
     this._persist();
   }
@@ -868,6 +937,39 @@ export class HyperliquidMarketCache {
     return this._snapshot.rawPredictedFundings;
   }
 
+  getOutcomeMeta(): OutcomeMetaResponse | null {
+    return this._snapshot.rawOutcomeMeta;
+  }
+
+  resolveOutcomeMarket(coinOrId: string | number): HyperliquidOutcomeMarketRecord | undefined {
+    const raw = String(coinOrId ?? "").trim();
+    if (!raw) return undefined;
+    const coin = raw.startsWith("#") ? raw : `#${raw}`;
+    return this._snapshot.outcomeMarketsByCoin[coin] ?? this._snapshot.outcomeMarketsByCoin[upper(coin)];
+  }
+
+  getOutcomeMarkets(params?: {
+    outcomeId?: number;
+    questionId?: number;
+  }): HyperliquidOutcomeMarketRecord[] {
+    if (params?.questionId !== undefined) {
+      return this._snapshot.outcomeMarketsByQuestion[String(params.questionId)] ?? [];
+    }
+    if (params?.outcomeId !== undefined) {
+      return this._snapshot.outcomeMarketsByOutcome[String(params.outcomeId)] ?? [];
+    }
+    return Object.values(this._snapshot.outcomeMarketsByCoin);
+  }
+
+  getOutcomeMid(coinOrId: string | number): string | undefined {
+    return this.resolveOutcomeMarket(coinOrId)?.mid;
+  }
+
+  /** Alias for apps that label HIP-4 outcome markets as prediction markets. */
+  resolvePredictionMarket(coinOrId: string | number): HyperliquidOutcomeMarketRecord | undefined {
+    return this.resolveOutcomeMarket(coinOrId);
+  }
+
   async getFundingHistory(params: FundingHistoryParameters, signal?: AbortSignal): Promise<FundingHistoryResponse> {
     const key = buildFundingHistoryKey(params);
     const cached = this._snapshot.rawFundingHistoryByKey[key];
@@ -1044,6 +1146,12 @@ export class HyperliquidMarketCache {
   private async _refreshPredictedFundings(): Promise<void> {
     this._snapshot.rawPredictedFundings = await predictedFundings({ transport: this.transport });
     this._snapshot.updatedAt.predictedFundings = Date.now();
+  }
+
+  private async _refreshOutcomeMeta(): Promise<void> {
+    this._snapshot.rawOutcomeMeta = await outcomeMeta({ transport: this.transport });
+    this._rebuildOutcomeMarkets();
+    this._snapshot.updatedAt.outcomeMeta = Date.now();
   }
 
   private async _loadDexEntries(): Promise<{ name: string; index: number }[]> {
@@ -1300,10 +1408,73 @@ export class HyperliquidMarketCache {
 
   private _applyMidsForDex(dex: string, mids: AllMidsResponse): void {
     for (const [coin, mid] of Object.entries(mids)) {
+      if (coin.startsWith("#")) {
+        const outcome = this.resolveOutcomeMarket(coin);
+        if (outcome && typeof mid === "string") outcome.mid = mid;
+        continue;
+      }
       const key = dex === MAIN_DEX || coin.includes(":") ? coin : `${dex}:${coin}`;
       const record = this.resolveMarket(key) ?? this.resolveMarket(coin);
       if (record && typeof mid === "string") record.mid = mid;
     }
+  }
+
+  private _rebuildOutcomeMarkets(): void {
+    const meta = this._snapshot.rawOutcomeMeta;
+    const byCoin: Record<string, HyperliquidOutcomeMarketRecord> = {};
+    const byOutcome: Record<string, HyperliquidOutcomeMarketRecord[]> = {};
+    const byQuestion: Record<string, HyperliquidOutcomeMarketRecord[]> = {};
+    if (!meta) {
+      this._snapshot.outcomeMarketsByCoin = byCoin;
+      this._snapshot.outcomeMarketsByOutcome = byOutcome;
+      this._snapshot.outcomeMarketsByQuestion = byQuestion;
+      return;
+    }
+
+    const questionByOutcome = new Map<number, OutcomeMetaResponse["questions"][number]>();
+    for (const question of meta.questions ?? []) {
+      for (const outcomeId of question.namedOutcomes ?? []) questionByOutcome.set(outcomeId, question);
+      if (Number.isFinite(Number(question.fallbackOutcome))) questionByOutcome.set(question.fallbackOutcome, question);
+    }
+
+    for (const outcome of meta.outcomes ?? []) {
+      const outcomeId = Number(outcome.outcome);
+      if (!Number.isFinite(outcomeId)) continue;
+      const question = questionByOutcome.get(outcomeId);
+      for (let sideIndex = 0; sideIndex < (outcome.sideSpecs?.length ?? 0); sideIndex += 1) {
+        const side = outcome.sideSpecs[sideIndex];
+        const tokenIdRaw = side?.token;
+        const tokenId = Number.isFinite(Number(tokenIdRaw)) ? Number(tokenIdRaw) : Number(`${outcomeId}${sideIndex}`);
+        if (!Number.isFinite(tokenId)) continue;
+        const coin = `#${tokenId}`;
+        const record: HyperliquidOutcomeMarketRecord = {
+          ...parseOutcomeDescription(outcome.description),
+          coin,
+          tokenId,
+          outcomeId,
+          sideIndex,
+          sideName: String(side?.name ?? sideIndex),
+          outcomeName: outcome.name,
+          outcomeDescription: outcome.description,
+          questionId: question?.question,
+          questionName: question?.name,
+          questionDescription: question?.description,
+          fallbackOutcome: question?.fallbackOutcome,
+          isSettled: question?.settledNamedOutcomes?.includes(outcomeId),
+        };
+        byCoin[coin] = record;
+        byCoin[upper(coin)] = record;
+        byOutcome[String(outcomeId)] = [...(byOutcome[String(outcomeId)] ?? []), record];
+        if (question?.question !== undefined) {
+          byQuestion[String(question.question)] = [...(byQuestion[String(question.question)] ?? []), record];
+        }
+      }
+    }
+
+    this._snapshot.outcomeMarketsByCoin = byCoin;
+    this._snapshot.outcomeMarketsByOutcome = byOutcome;
+    this._snapshot.outcomeMarketsByQuestion = byQuestion;
+    this._applyMids();
   }
 
   private _isStale(key: HyperliquidMarketCacheKey): boolean {
@@ -1344,6 +1515,12 @@ export class HyperliquidMarketCache {
       }
       if (key === "allDexsClearinghouseState") {
         persisted.rawAllDexsClearinghouseStateByUser = this._snapshot.rawAllDexsClearinghouseStateByUser;
+      }
+      if (key === "outcomeMeta") {
+        persisted.rawOutcomeMeta = this._snapshot.rawOutcomeMeta;
+        persisted.outcomeMarketsByCoin = this._snapshot.outcomeMarketsByCoin;
+        persisted.outcomeMarketsByOutcome = this._snapshot.outcomeMarketsByOutcome;
+        persisted.outcomeMarketsByQuestion = this._snapshot.outcomeMarketsByQuestion;
       }
       if (key === "predictedFundings") persisted.rawPredictedFundings = this._snapshot.rawPredictedFundings;
       if (key === "fundingHistory") persisted.rawFundingHistoryByKey = this._snapshot.rawFundingHistoryByKey;
