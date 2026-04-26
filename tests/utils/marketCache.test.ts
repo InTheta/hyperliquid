@@ -130,6 +130,9 @@ class MockInfoTransport implements IRequestTransport {
         "@108": "3003",
         "#52360": "0.4",
         "#52361": "0.6",
+        "#770": "0.2",
+        "#771": "0.8",
+        "#772": "0.01",
       } as T);
     }
 
@@ -148,6 +151,12 @@ class MockInfoTransport implements IRequestTransport {
             description: "This race is yet to be scheduled.",
             sideSpecs: [{ name: "Hypurr", token: 90 }, { name: "Usain Bolt", token: 91 }],
           },
+          {
+            outcome: 77,
+            name: "Three-way metadata should still expose binary sides only",
+            description: "class:binary|underlying:EDGE",
+            sideSpecs: [{ name: "Yes" }, { name: "No" }, { name: "Ignored" }],
+          },
         ],
         questions: [
           {
@@ -157,6 +166,14 @@ class MockInfoTransport implements IRequestTransport {
             fallbackOutcome: 9,
             namedOutcomes: [5236],
             settledNamedOutcomes: [],
+          },
+          {
+            question: 2,
+            name: "Settled edge-case outcome",
+            description: "Tests settled metadata and extra side filtering.",
+            fallbackOutcome: 77,
+            namedOutcomes: [],
+            settledNamedOutcomes: [77],
           },
         ],
       } as T);
@@ -576,8 +593,14 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.resolveOutcomeMarket("#52360")?.questionId, 1);
     assertEquals(cache.getOutcomeMarkets({ outcomeId: 5236 }).map((row) => row.coin), ["#52360", "#52361"]);
     assertEquals(cache.getOutcomeMarkets({ questionId: 1 }).map((row) => row.coin), ["#52360", "#52361", "#90", "#91"]);
+    assertEquals(cache.getOutcomeMarkets({ questionId: 2 }).map((row) => row.coin), ["#770", "#771"]);
+    assertEquals(cache.resolveOutcomeMarket("#770")?.isSettled, true);
+    assertEquals(cache.resolveOutcomeMarket("#770")?.outcomeClass, "binary");
+    assertEquals(cache.resolveOutcomeMarket("#771")?.sideName, "No");
+    assertEquals(cache.resolveOutcomeMarket("#772"), undefined);
     assertEquals(cache.getOutcomeMid("#52360"), "0.4");
     assertEquals(cache.getOutcomeMid(52361), "0.6");
+    assertEquals(cache.getOutcomeMid("#770"), "0.2");
     assertEquals(cache.getOutcomeAssetId("+52360"), 100052360);
     assertEquals(cache.getOutcomeTokenName(100052360), "+52360");
     assertEquals(cache.getOutcomeEncoding(100052360), 52360);
@@ -596,6 +619,21 @@ Deno.test("HyperliquidMarketCache", async (t) => {
       mid: "0.4",
     });
     assertEquals(cache.getOrderPrecision("#52360"), undefined);
+  });
+
+  await t.step("outcome mids can arrive before outcome metadata and are applied after discovery", async () => {
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      caches: { outcomeMeta: true, allMids: true },
+    });
+
+    await cache.refresh("allMids");
+    assertEquals(cache.getOutcomeMid("#52360"), undefined);
+
+    await cache.refresh("outcomeMeta");
+    assertEquals(cache.getOutcomeMid("#52360"), "0.4");
+    assertEquals(cache.resolveOutcomeMarket(100052360)?.tokenName, "+52360");
   });
 
   await t.step("live allMids updates HIP-4 outcome mids without creating perp or spot markets", async () => {
@@ -866,6 +904,42 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     const persistentHydrated = new HyperliquidMarketCache({ transport, storage: persistentStorage });
     persistentHydrated.hydrate();
     assertEquals(persistentHydrated.getOutcomeMid("#52360"), "0.4");
+  });
+
+  await t.step("hydrate rebuilds outcome alias maps from older persisted outcome metadata snapshots", () => {
+    const storage = new MemoryStorage();
+    const transport = new MockInfoTransport();
+    storage.setItem(
+      "old-outcomes",
+      JSON.stringify({
+        version: 1,
+        snapshot: {
+          loadedAt: 1,
+          updatedAt: { outcomeMeta: 1 },
+          rawOutcomeMeta: {
+            outcomes: [
+              {
+                outcome: 5236,
+                name: "Recurring",
+                description: "class:priceBinary|underlying:BTC",
+                sideSpecs: [{ name: "Yes" }, { name: "No" }],
+              },
+            ],
+            questions: [],
+          },
+          outcomeMarketsByCoin: {},
+          outcomeMarketsByOutcome: {},
+          outcomeMarketsByQuestion: {},
+        },
+      }),
+    );
+    const cache = new HyperliquidMarketCache({ transport, storage, storageKey: "old-outcomes" });
+
+    cache.hydrate();
+
+    assertEquals(cache.resolveOutcomeMarket("#52360")?.assetId, 100052360);
+    assertEquals(cache.resolveOutcomeMarket("+52360")?.coin, "#52360");
+    assertEquals(cache.resolveOutcomeMarket(100052360)?.encoding, 52360);
   });
 
   await t.step("metadata, contexts, and allMids persistence hydrate with configured volatility", async () => {

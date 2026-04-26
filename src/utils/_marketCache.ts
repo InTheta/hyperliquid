@@ -558,6 +558,13 @@ export class HyperliquidMarketCache {
         ...emptySnapshot(),
         ...(parsed.snapshot as Partial<HyperliquidMarketCacheSnapshot>),
       };
+      if (
+        this._snapshot.rawOutcomeMeta &&
+        (Object.keys(this._snapshot.outcomeAliasToCoin ?? {}).length === 0 ||
+          Object.keys(this._snapshot.outcomeMarketsByCoin ?? {}).length === 0)
+      ) {
+        this._rebuildOutcomeMarkets();
+      }
     } catch {
       return;
     }

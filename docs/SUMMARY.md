@@ -10,6 +10,7 @@
 ## Guides
 
 - [Market orders](guides/market-orders.md)
+- [Market cache examples](guides/market-cache.md)
 - [Agent wallets and vaults](guides/agent-wallets-and-vaults.md)
 - [Browser wallets](guides/browser-wallets.md)
 - [Tree-shaking](guides/tree-shaking.md)
