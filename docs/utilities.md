@@ -223,6 +223,17 @@ cache.resolveMarket("HYPE-SPOT");
 Bare coin aliases prefer default perpetual markets over spot markets. Use the pair, `BASE-SPOT`, or spot `@id` when you
 need the spot market explicitly.
 
+Use the list helpers to build market selectors without reading `snapshot()` internals:
+
+```ts
+cache.getDexNames(); // ["main", ...builderDexNames]
+cache.getPerpMarkets();
+cache.getPerpMarkets("test");
+cache.getBuilderDexMarkets();
+cache.getSpotMarkets();
+cache.getMarkets({ type: "perp", isBuilderDex: false });
+```
+
 ### Order-ticket precision
 
 Use `getOrderPrecision()` for limit, market, scale, and TWAP order inputs. It returns the size decimals, step

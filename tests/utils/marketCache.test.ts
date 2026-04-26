@@ -438,6 +438,47 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.resolveMarket(100052360), undefined);
   });
 
+  await t.step("market list helpers return stable normalized selectors", async () => {
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({ transport, dexs: true, caches: { metadata: true } });
+
+    await cache.refresh();
+
+    assertEquals(cache.getDexNames(), ["main", "dexA", "dexB", "dexC"]);
+    assertEquals(cache.getPerpMarkets().map((record) => record.qualifiedName), [
+      "BTC",
+      "ETH",
+      "AAA",
+      "dexA:AAA",
+      "dexB:BBB",
+      "dexB:AAA",
+      "dexC:CCC",
+    ]);
+    assertEquals(cache.getPerpMarkets("dexB").map((record) => record.qualifiedName), ["dexB:BBB", "dexB:AAA"]);
+    assertEquals(cache.getBuilderDexMarkets().map((record) => record.qualifiedName), [
+      "dexA:AAA",
+      "dexB:BBB",
+      "dexB:AAA",
+      "dexC:CCC",
+    ]);
+    assertEquals(cache.getBuilderDexMarkets("main"), []);
+    assertEquals(cache.getSpotMarkets().map((record) => record.qualifiedName), [
+      "PURR/USDC",
+      "BTC/USDC",
+      "ETH/USDC",
+    ]);
+    assertEquals(cache.getMarkets({ type: "perp", isBuilderDex: false }).map((record) => record.qualifiedName), [
+      "BTC",
+      "ETH",
+      "AAA",
+    ]);
+    assertEquals(cache.getMarkets({ type: "spot", dex: "main" }).map((record) => record.marketKey), [
+      "@0",
+      "@107",
+      "@108",
+    ]);
+  });
+
   await t.step("order precision matches Hyperliquid and Omni order-ticket rules", async () => {
     const transport = new MockInfoTransport();
     const cache = new HyperliquidMarketCache({ transport, dexs: true, caches: { metadata: true } });

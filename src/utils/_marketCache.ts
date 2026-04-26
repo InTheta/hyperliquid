@@ -75,6 +75,13 @@ export interface HyperliquidMarketCacheOptions {
   storageKey?: string;
 }
 
+/** Filters for reading normalized market records from {@link HyperliquidMarketCache}. */
+export interface HyperliquidMarketFilter {
+  type?: "perp" | "spot";
+  dex?: string;
+  isBuilderDex?: boolean;
+}
+
 /** Normalized market record used by {@link HyperliquidMarketCache}. */
 export interface HyperliquidMarketRecord {
   symbol: string;
@@ -480,6 +487,20 @@ function normalizePerpCtx(ctx: unknown): Record<string, unknown> | null {
   return isRecord(ctx) ? ctx : null;
 }
 
+function sortMarkets(
+  records: HyperliquidMarketRecord[],
+): HyperliquidMarketRecord[] {
+  return [...records].sort((left, right) => {
+    if (left.type !== right.type) return left.type === "perp" ? -1 : 1;
+    if (left.dex !== right.dex) {
+      if (left.dex === MAIN_DEX) return -1;
+      if (right.dex === MAIN_DEX) return 1;
+      return left.dex.localeCompare(right.dex);
+    }
+    return left.assetId - right.assetId;
+  });
+}
+
 function parseOutcomeDescription(description: string): Partial<HyperliquidOutcomeMarketRecord> {
   const out: Partial<HyperliquidOutcomeMarketRecord> = {};
   for (const part of description.split("|")) {
@@ -818,6 +839,39 @@ export class HyperliquidMarketCache {
     const alias = this._snapshot.aliasToSymbol[upper(key)] ?? this._snapshot.aliasToSymbol[compact(key)];
     if (alias) return this._snapshot.marketsBySymbol[alias];
     return undefined;
+  }
+
+  getMarkets(filter?: HyperliquidMarketFilter): HyperliquidMarketRecord[] {
+    const dex = filter?.dex === undefined ? undefined : normalizeDexName(filter.dex);
+    return sortMarkets(
+      Object.values(this._snapshot.marketsBySymbol).filter((record) => {
+        if (filter?.type !== undefined && record.type !== filter.type) return false;
+        if (dex !== undefined && record.dex !== dex) return false;
+        if (filter?.isBuilderDex !== undefined && record.isBuilderDex !== filter.isBuilderDex) return false;
+        return true;
+      }),
+    );
+  }
+
+  getPerpMarkets(dex?: string): HyperliquidMarketRecord[] {
+    return this.getMarkets({ type: "perp", dex });
+  }
+
+  getSpotMarkets(): HyperliquidMarketRecord[] {
+    return this.getMarkets({ type: "spot" });
+  }
+
+  getBuilderDexMarkets(dex?: string): HyperliquidMarketRecord[] {
+    return this.getMarkets({ type: "perp", dex, isBuilderDex: true });
+  }
+
+  getDexNames(): string[] {
+    const names = Object.keys(this._snapshot.rawMetaAndAssetCtxsByDex);
+    return names.sort((left, right) => {
+      if (left === MAIN_DEX) return -1;
+      if (right === MAIN_DEX) return 1;
+      return left.localeCompare(right);
+    });
   }
 
   getAssetId(symbolOrId: string | number): number | undefined {

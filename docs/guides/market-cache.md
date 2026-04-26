@@ -26,6 +26,11 @@ const btc = cache.getOrderTicketInfo("BTC", 100_000);
 const builder = cache.getOrderTicketInfo("test:ABC", 12.345);
 const spot = cache.getOrderTicketInfo("@107", 100_000);
 
+const loadedDexs = cache.getDexNames();
+const perps = cache.getPerpMarkets();
+const builderPerps = cache.getBuilderDexMarkets();
+const spotPairs = cache.getSpotMarkets();
+
 btc?.assetId; // 0
 builder?.assetId; // HIP-3 global asset ID
 spot?.spotPairId; // "@107"
