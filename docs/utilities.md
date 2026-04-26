@@ -317,6 +317,10 @@ await cache.refresh();
 
 const yes = cache.resolveOutcomeMarket("#52360");
 
+yes?.encoding; // 52360 = 10 * outcomeId + sideIndex
+yes?.spotCoin; // "#52360"
+yes?.tokenName; // "+52360"
+yes?.assetId; // 100052360 = 100_000_000 + encoding
 yes?.outcomeName; // "Recurring"
 yes?.sideName; // "Yes"
 yes?.outcomeClass; // "priceBinary" when encoded in the description
@@ -331,6 +335,22 @@ mids, and the cache overlays those onto outcome records. Outcome records are int
 `resolveMarket()` and order-ticket precision because HIP-4 testnet outcomes are not represented in the normal perp/spot
 metadata maps.
 
+Outcome routing identifiers follow Hyperliquid's official asset ID rules: `encoding = 10 * outcome + side`, spot coin
+`#<encoding>`, token name `+<encoding>`, and order/cancel asset ID `100_000_000 + encoding`. The cache resolves all of
+those forms:
+
+```ts
+cache.resolveOutcomeMarket("#52360");
+cache.resolveOutcomeMarket("+52360");
+cache.resolveOutcomeMarket(52360);
+cache.resolveOutcomeMarket(100052360);
+
+cache.getOutcomeAssetId("#52360"); // 100052360
+cache.getOutcomeTokenName("#52360"); // "+52360"
+cache.getOutcomeEncoding(100052360); // 52360
+cache.getOutcomeOrderInfo("#52360"); // routing identifiers plus latest cached mid
+```
+
 For prediction-market naming, `resolvePredictionMarket()` is an alias of `resolveOutcomeMarket()`:
 
 ```ts
@@ -338,6 +358,11 @@ cache.resolvePredictionMarket(52360);
 cache.getOutcomeMarkets({ questionId: 1 });
 cache.getOutcomeMid("#52360");
 ```
+
+Outcome trading is still live-evolving. The cache exposes routing metadata and mids for outcomes, but does not invent
+price or lot-size precision for outcome orders until Hyperliquid exposes stable metadata for that path. See the official
+[asset IDs](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/asset-ids) and
+[tick and lot size](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size) docs.
 
 ### Live all-DEX streams
 

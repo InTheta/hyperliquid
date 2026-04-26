@@ -111,8 +111,14 @@ export interface HyperliquidMarketRecord {
 export interface HyperliquidOutcomeMarketRecord {
   /** Trade/API coin key used by allMids, such as `#52360`. */
   coin: string;
-  /** Numeric coin key without the leading `#`. */
-  tokenId: number;
+  /** Official outcome encoding: `10 * outcomeId + sideIndex`. */
+  encoding: number;
+  /** Outcome spot coin representation, such as `#52360`. */
+  spotCoin: string;
+  /** Outcome token name representation, such as `+52360`. */
+  tokenName: string;
+  /** Outcome order/cancel asset ID: `100_000_000 + encoding`. */
+  assetId: number;
   /** Outcome identifier from `outcomeMeta`. */
   outcomeId: number;
   /** Side index inside the outcome's `sideSpecs`. */
@@ -136,6 +142,22 @@ export interface HyperliquidOutcomeMarketRecord {
   targetPrice?: string;
   /** Parsed `period:*` value from description strings when present. */
   period?: string;
+  mid?: string;
+}
+
+/** Routing metadata for a HIP-4 outcome order. */
+export interface HyperliquidOutcomeOrderInfo {
+  coin: string;
+  encoding: number;
+  spotCoin: string;
+  tokenName: string;
+  assetId: number;
+  outcomeId: number;
+  sideIndex: number;
+  sideName: string;
+  outcomeName: string;
+  questionId?: number;
+  questionName?: string;
   mid?: string;
 }
 
@@ -218,6 +240,7 @@ export interface HyperliquidMarketCacheSnapshot {
   rawAllDexsClearinghouseStateByUser: Record<string, Record<string, ClearinghouseStateResponse>>;
   rawOutcomeMeta: OutcomeMetaResponse | null;
   outcomeMarketsByCoin: Record<string, HyperliquidOutcomeMarketRecord>;
+  outcomeAliasToCoin: Record<string, string>;
   outcomeMarketsByOutcome: Record<string, HyperliquidOutcomeMarketRecord[]>;
   outcomeMarketsByQuestion: Record<string, HyperliquidOutcomeMarketRecord[]>;
   rawPredictedFundings: PredictedFundingsResponse | null;
@@ -262,6 +285,7 @@ function emptySnapshot(): HyperliquidMarketCacheSnapshot {
     rawAllDexsClearinghouseStateByUser: {},
     rawOutcomeMeta: null,
     outcomeMarketsByCoin: {},
+    outcomeAliasToCoin: {},
     outcomeMarketsByOutcome: {},
     outcomeMarketsByQuestion: {},
     rawPredictedFundings: null,
@@ -574,6 +598,7 @@ export class HyperliquidMarketCache {
       if (key === "outcomeMeta") {
         this._snapshot.rawOutcomeMeta = null;
         this._snapshot.outcomeMarketsByCoin = {};
+        this._snapshot.outcomeAliasToCoin = {};
         this._snapshot.outcomeMarketsByOutcome = {};
         this._snapshot.outcomeMarketsByQuestion = {};
       }
@@ -944,8 +969,10 @@ export class HyperliquidMarketCache {
   resolveOutcomeMarket(coinOrId: string | number): HyperliquidOutcomeMarketRecord | undefined {
     const raw = String(coinOrId ?? "").trim();
     if (!raw) return undefined;
-    const coin = raw.startsWith("#") ? raw : `#${raw}`;
-    return this._snapshot.outcomeMarketsByCoin[coin] ?? this._snapshot.outcomeMarketsByCoin[upper(coin)];
+    const alias = this._snapshot.outcomeAliasToCoin[raw] ??
+      this._snapshot.outcomeAliasToCoin[upper(raw)] ??
+      this._snapshot.outcomeAliasToCoin[raw.startsWith("#") || raw.startsWith("+") ? raw : `#${raw}`];
+    return alias ? this._snapshot.outcomeMarketsByCoin[alias] : undefined;
   }
 
   getOutcomeMarkets(params?: {
@@ -963,6 +990,37 @@ export class HyperliquidMarketCache {
 
   getOutcomeMid(coinOrId: string | number): string | undefined {
     return this.resolveOutcomeMarket(coinOrId)?.mid;
+  }
+
+  getOutcomeAssetId(coinOrId: string | number): number | undefined {
+    return this.resolveOutcomeMarket(coinOrId)?.assetId;
+  }
+
+  getOutcomeTokenName(coinOrId: string | number): string | undefined {
+    return this.resolveOutcomeMarket(coinOrId)?.tokenName;
+  }
+
+  getOutcomeEncoding(coinOrId: string | number): number | undefined {
+    return this.resolveOutcomeMarket(coinOrId)?.encoding;
+  }
+
+  getOutcomeOrderInfo(coinOrId: string | number): HyperliquidOutcomeOrderInfo | undefined {
+    const record = this.resolveOutcomeMarket(coinOrId);
+    if (!record) return undefined;
+    return {
+      coin: record.coin,
+      encoding: record.encoding,
+      spotCoin: record.spotCoin,
+      tokenName: record.tokenName,
+      assetId: record.assetId,
+      outcomeId: record.outcomeId,
+      sideIndex: record.sideIndex,
+      sideName: record.sideName,
+      outcomeName: record.outcomeName,
+      questionId: record.questionId,
+      questionName: record.questionName,
+      mid: record.mid,
+    };
   }
 
   /** Alias for apps that label HIP-4 outcome markets as prediction markets. */
@@ -1422,10 +1480,12 @@ export class HyperliquidMarketCache {
   private _rebuildOutcomeMarkets(): void {
     const meta = this._snapshot.rawOutcomeMeta;
     const byCoin: Record<string, HyperliquidOutcomeMarketRecord> = {};
+    const aliasToCoin: Record<string, string> = {};
     const byOutcome: Record<string, HyperliquidOutcomeMarketRecord[]> = {};
     const byQuestion: Record<string, HyperliquidOutcomeMarketRecord[]> = {};
     if (!meta) {
       this._snapshot.outcomeMarketsByCoin = byCoin;
+      this._snapshot.outcomeAliasToCoin = aliasToCoin;
       this._snapshot.outcomeMarketsByOutcome = byOutcome;
       this._snapshot.outcomeMarketsByQuestion = byQuestion;
       return;
@@ -1442,15 +1502,19 @@ export class HyperliquidMarketCache {
       if (!Number.isFinite(outcomeId)) continue;
       const question = questionByOutcome.get(outcomeId);
       for (let sideIndex = 0; sideIndex < (outcome.sideSpecs?.length ?? 0); sideIndex += 1) {
+        if (sideIndex > 1) continue;
         const side = outcome.sideSpecs[sideIndex];
-        const tokenIdRaw = side?.token;
-        const tokenId = Number.isFinite(Number(tokenIdRaw)) ? Number(tokenIdRaw) : Number(`${outcomeId}${sideIndex}`);
-        if (!Number.isFinite(tokenId)) continue;
-        const coin = `#${tokenId}`;
+        const encoding = 10 * outcomeId + sideIndex;
+        const coin = `#${encoding}`;
+        const tokenName = `+${encoding}`;
+        const assetId = 100_000_000 + encoding;
         const record: HyperliquidOutcomeMarketRecord = {
           ...parseOutcomeDescription(outcome.description),
           coin,
-          tokenId,
+          encoding,
+          spotCoin: coin,
+          tokenName,
+          assetId,
           outcomeId,
           sideIndex,
           sideName: String(side?.name ?? sideIndex),
@@ -1463,7 +1527,9 @@ export class HyperliquidMarketCache {
           isSettled: question?.settledNamedOutcomes?.includes(outcomeId),
         };
         byCoin[coin] = record;
-        byCoin[upper(coin)] = record;
+        for (const alias of [coin, upper(coin), String(encoding), tokenName, upper(tokenName), String(assetId)]) {
+          aliasToCoin[alias] = coin;
+        }
         byOutcome[String(outcomeId)] = [...(byOutcome[String(outcomeId)] ?? []), record];
         if (question?.question !== undefined) {
           byQuestion[String(question.question)] = [...(byQuestion[String(question.question)] ?? []), record];
@@ -1472,6 +1538,7 @@ export class HyperliquidMarketCache {
     }
 
     this._snapshot.outcomeMarketsByCoin = byCoin;
+    this._snapshot.outcomeAliasToCoin = aliasToCoin;
     this._snapshot.outcomeMarketsByOutcome = byOutcome;
     this._snapshot.outcomeMarketsByQuestion = byQuestion;
     this._applyMids();
@@ -1517,10 +1584,12 @@ export class HyperliquidMarketCache {
         persisted.rawAllDexsClearinghouseStateByUser = this._snapshot.rawAllDexsClearinghouseStateByUser;
       }
       if (key === "outcomeMeta") {
+        const outcomesForPersistence = this._outcomesForPersistence();
         persisted.rawOutcomeMeta = this._snapshot.rawOutcomeMeta;
-        persisted.outcomeMarketsByCoin = this._snapshot.outcomeMarketsByCoin;
-        persisted.outcomeMarketsByOutcome = this._snapshot.outcomeMarketsByOutcome;
-        persisted.outcomeMarketsByQuestion = this._snapshot.outcomeMarketsByQuestion;
+        persisted.outcomeMarketsByCoin = outcomesForPersistence.outcomeMarketsByCoin;
+        persisted.outcomeAliasToCoin = this._snapshot.outcomeAliasToCoin;
+        persisted.outcomeMarketsByOutcome = outcomesForPersistence.outcomeMarketsByOutcome;
+        persisted.outcomeMarketsByQuestion = outcomesForPersistence.outcomeMarketsByQuestion;
       }
       if (key === "predictedFundings") persisted.rawPredictedFundings = this._snapshot.rawPredictedFundings;
       if (key === "fundingHistory") persisted.rawFundingHistoryByKey = this._snapshot.rawFundingHistoryByKey;
@@ -1567,6 +1636,37 @@ export class HyperliquidMarketCache {
       marketsByAssetId: remap(this._snapshot.marketsByAssetId),
       marketsBySpotPairId: remap(this._snapshot.marketsBySpotPairId),
       marketsByBaseQuoteType: remap(this._snapshot.marketsByBaseQuoteType),
+    };
+  }
+
+  private _outcomesForPersistence(): Pick<
+    HyperliquidMarketCacheSnapshot,
+    "outcomeMarketsByCoin" | "outcomeMarketsByOutcome" | "outcomeMarketsByQuestion"
+  > {
+    if (this._policies.allMids.persist) {
+      return {
+        outcomeMarketsByCoin: this._snapshot.outcomeMarketsByCoin,
+        outcomeMarketsByOutcome: this._snapshot.outcomeMarketsByOutcome,
+        outcomeMarketsByQuestion: this._snapshot.outcomeMarketsByQuestion,
+      };
+    }
+    const byCoin: Record<string, HyperliquidOutcomeMarketRecord> = {};
+    for (const [coin, record] of Object.entries(this._snapshot.outcomeMarketsByCoin)) {
+      byCoin[coin] = { ...record, mid: undefined };
+    }
+    const remapRows = (
+      source: Record<string, HyperliquidOutcomeMarketRecord[]>,
+    ): Record<string, HyperliquidOutcomeMarketRecord[]> => {
+      const out: Record<string, HyperliquidOutcomeMarketRecord[]> = {};
+      for (const [key, rows] of Object.entries(source)) {
+        out[key] = rows.map((record) => byCoin[record.coin] ?? { ...record, mid: undefined });
+      }
+      return out;
+    };
+    return {
+      outcomeMarketsByCoin: byCoin,
+      outcomeMarketsByOutcome: remapRows(this._snapshot.outcomeMarketsByOutcome),
+      outcomeMarketsByQuestion: remapRows(this._snapshot.outcomeMarketsByQuestion),
     };
   }
 }

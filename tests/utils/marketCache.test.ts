@@ -41,11 +41,17 @@ class MockInfoTransport implements IRequestTransport {
     if (req.type === "metaAndAssetCtxs" && req.dex === "dexB") {
       return Promise.resolve([
         {
-          universe: [{ name: "BBB", szDecimals: 2, maxLeverage: 4, marginTableId: 12 }],
+          universe: [
+            { name: "BBB", szDecimals: 2, maxLeverage: 4, marginTableId: 12 },
+            { name: "AAA", szDecimals: 3, maxLeverage: 4, marginTableId: 14 },
+          ],
           marginTables: [],
           collateralToken: 1,
         },
-        [{ markPx: "0.123456", midPx: "0.12345", funding: "-0.0003", openInterest: "200" }],
+        [
+          { markPx: "0.123456", midPx: "0.12345", funding: "-0.0003", openInterest: "200" },
+          { markPx: "11.4", midPx: "11.45", funding: "0.0008", openInterest: "400" },
+        ],
       ] as T);
     }
 
@@ -66,6 +72,7 @@ class MockInfoTransport implements IRequestTransport {
           universe: [
             { name: "BTC", szDecimals: 5, maxLeverage: 50, marginTableId: 1 },
             { name: "ETH", szDecimals: 4, maxLeverage: 25, marginTableId: 2 },
+            { name: "AAA", szDecimals: 3, maxLeverage: 5, marginTableId: 3 },
           ],
           marginTables: [],
           collateralToken: 1,
@@ -73,6 +80,7 @@ class MockInfoTransport implements IRequestTransport {
         [
           { markPx: this.mainMid, midPx: this.mainMid, funding: this.mainFunding, openInterest: "1000" },
           { markPx: "3000", midPx: "3001", funding: "0.00005", openInterest: "500" },
+          { markPx: "11", midPx: "11.1", funding: "0.00006", openInterest: "300" },
         ],
       ] as T);
     }
@@ -85,17 +93,21 @@ class MockInfoTransport implements IRequestTransport {
             token("USDC", 6, 1),
             token("PURR", 0, 2),
             token("USDH", 6, 3),
+            token("ETH", 4, 4),
           ],
           universe: [
             // Intentionally misleading raw name. The cache must derive BTC/USDC
             // from token indexes, not trust this field.
             { tokens: [0, 1], name: "JEFF/USDC", index: 107, isCanonical: true },
             { tokens: [2, 1], name: "PURR/USDC", index: 0, isCanonical: true },
+            // Intentionally conflicts with the real BTC/USDC pair above.
+            { tokens: [4, 1], name: "BTC/USDC", index: 108, isCanonical: true },
           ],
         },
         [
           { coin: "@107", markPx: "99999", midPx: "100001", circulatingSupply: "1", totalSupply: "1" },
           { coin: "PURR/USDC", markPx: "0.1", midPx: "0.11", circulatingSupply: "1", totalSupply: "1" },
+          { coin: "@108", markPx: "3000", midPx: "3002", circulatingSupply: "1", totalSupply: "1" },
         ],
       ] as T);
     }
@@ -104,13 +116,21 @@ class MockInfoTransport implements IRequestTransport {
       return Promise.resolve({ AAA: "12.5" } as T);
     }
     if (req.type === "allMids" && req.dex === "dexB") {
-      return Promise.resolve({ BBB: "0.12" } as T);
+      return Promise.resolve({ BBB: "0.12", AAA: "11.5" } as T);
     }
     if (req.type === "allMids" && req.dex === "dexC") {
       return Promise.resolve({ CCC: "1.25" } as T);
     }
     if (req.type === "allMids") {
-      return Promise.resolve({ BTC: "100010", ETH: "2999", "@107": "100002", "#52360": "0.4", "#52361": "0.6" } as T);
+      return Promise.resolve({
+        BTC: "100010",
+        ETH: "2999",
+        AAA: "11.2",
+        "@107": "100002",
+        "@108": "3003",
+        "#52360": "0.4",
+        "#52361": "0.6",
+      } as T);
     }
 
     if (req.type === "outcomeMeta") {
@@ -313,6 +333,7 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.getAssetId("BTC"), 0);
     assertEquals(cache.getAssetId("dexA:AAA"), 110000);
     assertEquals(cache.getAssetId("dexB:BBB"), 120000);
+    assertEquals(cache.getAssetId("dexB:AAA"), 120001);
     assertEquals(cache.getAssetId("dexC:CCC"), 130000);
   });
 
@@ -347,9 +368,13 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(byNumericId?.symbol, byAtId?.symbol);
     assertEquals(byPair?.symbol, byAtId?.symbol);
     assertEquals(byAssetId?.symbol, byAtId?.symbol);
+    assertEquals(cache.resolveMarket("ETH/USDC")?.symbol, "hyperliquid:ETH:USDC:spot");
+    assertEquals(cache.resolveMarket("@108")?.symbol, "hyperliquid:ETH:USDC:spot");
     assertEquals(cache.resolveMarket("JEFF/USDC"), undefined);
     assertEquals(cache.resolveMarket("BTC")?.type, "perp");
     assertEquals(cache.resolveMarket("BTC")?.symbol, "hyperliquid:BTC:USDC:perp");
+    assertEquals(cache.resolveMarket("ETH")?.type, "perp");
+    assertEquals(cache.resolveMarket("ETH")?.symbol, "hyperliquid:ETH:USDC:perp");
   });
 
   await t.step("main, builder dex, and spot markets resolve through seamless aliases", async () => {
@@ -366,12 +391,18 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.getMarketKey("BTC"), "main:BTC");
     assertEquals(cache.getQualifiedName("BTC"), "BTC");
 
+    const mainDuplicate = cache.resolveMarket("AAA");
+    assertEquals(mainDuplicate?.symbol, "hyperliquid:AAA:USDC:perp");
+    assertEquals(mainDuplicate?.assetId, 2);
+
     const builder = cache.resolveMarket("dexA:AAA");
     assertEquals(cache.resolveMarket("dexA:AAA-PERP")?.symbol, builder?.symbol);
     assertEquals(cache.resolveMarket("hyperliquid:dexA:AAA:USDC:perp")?.symbol, builder?.symbol);
     assertEquals(cache.resolveMarket(110000)?.symbol, builder?.symbol);
     assertEquals(cache.getCoin("dexA:AAA"), "AAA");
     assertEquals(cache.getMarketKey("dexA:AAA"), "dexA:AAA");
+    assertEquals(cache.resolveMarket("dexB:AAA")?.assetId, 120001);
+    assertEquals(cache.resolveMarket("dexB:AAA-PERP")?.symbol, "hyperliquid:dexB:AAA:USDC:perp");
 
     const collateral = cache.resolveMarket("dexC:CCC");
     assertEquals(cache.resolveMarket("dexC:CCC-PERP")?.symbol, collateral?.symbol);
@@ -386,6 +417,8 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.resolveMarket("hyperliquid:BTC:USDC:spot")?.symbol, spot?.symbol);
     assertEquals(cache.getMarketKey("@107"), "@107");
     assertEquals(cache.getQualifiedName("@107"), "BTC/USDC");
+    assertEquals(cache.resolveMarket(10107)?.symbol, "hyperliquid:BTC:USDC:spot");
+    assertEquals(cache.resolveMarket(100052360), undefined);
   });
 
   await t.step("order precision matches Hyperliquid and Omni order-ticket rules", async () => {
@@ -502,9 +535,12 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(countRequests(transport, (p) => p.type === "allMids" && p.dex === "dexB"), 1);
     assertEquals(countRequests(transport, (p) => p.type === "allMids" && p.dex === "dexC"), 1);
     assertEquals(cache.getMid("BTC"), "100010");
+    assertEquals(cache.getMid("AAA"), "11.2");
     assertEquals(cache.getMid("dexA:AAA"), "12.5");
+    assertEquals(cache.getMid("dexB:AAA"), "11.5");
     assertEquals(cache.getMid("dexC:CCC"), "1.25");
     assertEquals(cache.getMid("@107"), "100002");
+    assertEquals(cache.getMid("@108"), "3003");
   });
 
   await t.step("HIP-4 outcome metadata is opt-in and allMids overlays prediction mids", async () => {
@@ -518,9 +554,20 @@ Deno.test("HyperliquidMarketCache", async (t) => {
 
     assertEquals(countRequests(transport, (p) => p.type === "outcomeMeta"), 1);
     assertEquals(cache.resolveMarket("#52360"), undefined);
-    assertEquals(cache.resolveOutcomeMarket("#52360")?.coin, "#52360");
+    const yes = cache.resolveOutcomeMarket("#52360");
+    assertEquals(yes?.coin, "#52360");
+    assertEquals(yes?.encoding, 52360);
+    assertEquals(yes?.spotCoin, "#52360");
+    assertEquals(yes?.tokenName, "+52360");
+    assertEquals(yes?.assetId, 100052360);
+    assertEquals(cache.resolveOutcomeMarket("52360")?.coin, yes?.coin);
+    assertEquals(cache.resolveOutcomeMarket("+52360")?.coin, yes?.coin);
+    assertEquals(cache.resolveOutcomeMarket(100052360)?.coin, yes?.coin);
     assertEquals(cache.resolvePredictionMarket("52360")?.sideName, "Yes");
     assertEquals(cache.resolveOutcomeMarket("#52361")?.sideName, "No");
+    assertEquals(cache.resolveOutcomeMarket("#52361")?.encoding, 52361);
+    assertEquals(cache.resolveOutcomeMarket("#52361")?.tokenName, "+52361");
+    assertEquals(cache.resolveOutcomeMarket("#52361")?.assetId, 100052361);
     assertEquals(cache.resolveOutcomeMarket("#52360")?.outcomeClass, "priceBinary");
     assertEquals(cache.resolveOutcomeMarket("#52360")?.underlying, "BTC");
     assertEquals(cache.resolveOutcomeMarket("#52360")?.expiry, "20260427-0300");
@@ -531,6 +578,24 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.getOutcomeMarkets({ questionId: 1 }).map((row) => row.coin), ["#52360", "#52361", "#90", "#91"]);
     assertEquals(cache.getOutcomeMid("#52360"), "0.4");
     assertEquals(cache.getOutcomeMid(52361), "0.6");
+    assertEquals(cache.getOutcomeAssetId("+52360"), 100052360);
+    assertEquals(cache.getOutcomeTokenName(100052360), "+52360");
+    assertEquals(cache.getOutcomeEncoding(100052360), 52360);
+    assertEquals(cache.getOutcomeOrderInfo("#52360"), {
+      coin: "#52360",
+      encoding: 52360,
+      spotCoin: "#52360",
+      tokenName: "+52360",
+      assetId: 100052360,
+      outcomeId: 5236,
+      sideIndex: 0,
+      sideName: "Yes",
+      outcomeName: "Recurring",
+      questionId: 1,
+      questionName: "Will BTC close above target?",
+      mid: "0.4",
+    });
+    assertEquals(cache.getOrderPrecision("#52360"), undefined);
   });
 
   await t.step("live allMids updates HIP-4 outcome mids without creating perp or spot markets", async () => {
@@ -545,6 +610,7 @@ Deno.test("HyperliquidMarketCache", async (t) => {
 
     assertEquals(cache.getOutcomeMid("#52360"), "0.41");
     assertEquals(cache.resolveMarket("#52360"), undefined);
+    assertEquals(cache.resolveMarket(100052360), undefined);
     assertEquals(cache.getMid("BTC"), undefined);
   });
 
@@ -560,9 +626,9 @@ Deno.test("HyperliquidMarketCache", async (t) => {
 
     await cache.refresh("metadata");
     await cache.startConfiguredAllMids();
-    subscriptionTransport.emit("allMids", { dex: "", mids: { BTC: "100040", "@107": "100041" } });
+    subscriptionTransport.emit("allMids", { dex: "", mids: { BTC: "100040", "@107": "100041", "@108": "3004" } });
     subscriptionTransport.emit("allMids", { dex: "dexA", mids: { AAA: "13.1" } });
-    subscriptionTransport.emit("allMids", { dex: "dexB", mids: { "dexB:BBB": "0.14" } });
+    subscriptionTransport.emit("allMids", { dex: "dexB", mids: { "dexB:BBB": "0.14", AAA: "11.6" } });
     subscriptionTransport.emit("allMids", { dex: "dexC", mids: { CCC: "1.3" } });
 
     assertEquals(subscriptionTransport.subscriptions.map((row) => row.payload), [
@@ -573,8 +639,10 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     ]);
     assertEquals(cache.getMid("BTC"), "100040");
     assertEquals(cache.getMid("@107"), "100041");
+    assertEquals(cache.getMid("@108"), "3004");
     assertEquals(cache.getMid("dexA:AAA"), "13.1");
     assertEquals(cache.getMid("dexB:BBB"), "0.14");
+    assertEquals(cache.getMid("dexB:AAA"), "11.6");
     assertEquals(cache.getMid("dexC:CCC"), "1.3");
 
     await cache.stopAllMids("dexA");
@@ -614,11 +682,13 @@ Deno.test("HyperliquidMarketCache", async (t) => {
           ["dexA", [perpCtx("12.9", "-0.0007")]],
         ],
       });
+      cache.applyAllMids({ dex: "dexA", mids: { AAA: "13.2" } });
 
       assertEquals(cache.getMid("BTC"), "100020");
       assertEquals(cache.getFundingRate("BTC"), "0.0009");
-      assertEquals(cache.getMid("dexA:AAA"), "12.9");
+      assertEquals(cache.getMid("dexA:AAA"), "13.2");
       assertEquals(cache.getFundingRate("dexA:AAA"), "-0.0007");
+      assertEquals(cache.getOrderTicketInfo("dexA:AAA", 12.345)?.sizeStep, 0.1);
       assertEquals(cache.getSpotContext("@107")?.markPx, "99999");
       assertEquals(cache.getAllDexsAssetCtxs("dexA")[0].markPx, "12.9");
     },
@@ -632,16 +702,17 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     transport.requests = [];
     cache.applyAllDexsAssetCtxs({
       ctxs: {
-        dexB: [perpCtx("0.13", "0.0001"), perpCtx("0.2", "0.0002")],
+        dexB: [perpCtx("0.13", "0.0001"), perpCtx("11.7", "0.0002"), perpCtx("0.2", "0.0003")],
       },
     });
     await Promise.resolve();
     await Promise.resolve();
 
     assertEquals(cache.getMid("dexB:BBB"), "0.13");
+    assertEquals(cache.getMid("dexB:AAA"), "11.7");
     assertEquals(cache.snapshot().needsMetadataRefresh, true);
     assertEquals(cache.snapshot().unmappedAllDexsAssetCtxs[0]?.dex, "dexB");
-    assertEquals(cache.snapshot().unmappedAllDexsAssetCtxs[0]?.localAssetIndex, 1);
+    assertEquals(cache.snapshot().unmappedAllDexsAssetCtxs[0]?.localAssetIndex, 2);
     assertEquals(countRequests(transport, (p) => p.type === "perpDexs"), 1);
   });
 
@@ -763,5 +834,61 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(hydrated.getAssetId("dexA:AAA"), 110000);
     assertEquals(hydrated.getAllMids(), undefined);
     assertEquals(hydrated.getMid("BTC"), "100000");
+  });
+
+  await t.step("outcome metadata persists without volatile mids unless allMids persistence is enabled", async () => {
+    const storage = new MemoryStorage();
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      storage,
+      caches: { outcomeMeta: true, allMids: true },
+    });
+
+    await cache.refresh();
+
+    const hydrated = new HyperliquidMarketCache({ transport, storage });
+    hydrated.hydrate();
+    assertEquals(hydrated.resolveOutcomeMarket(100052360)?.assetId, 100052360);
+    assertEquals(hydrated.getOutcomeMid("#52360"), undefined);
+
+    const persistentStorage = new MemoryStorage();
+    const persistent = new HyperliquidMarketCache({
+      transport,
+      storage: persistentStorage,
+      caches: {
+        outcomeMeta: true,
+        allMids: { enabled: true, persist: true },
+      },
+    });
+    await persistent.refresh();
+
+    const persistentHydrated = new HyperliquidMarketCache({ transport, storage: persistentStorage });
+    persistentHydrated.hydrate();
+    assertEquals(persistentHydrated.getOutcomeMid("#52360"), "0.4");
+  });
+
+  await t.step("metadata, contexts, and allMids persistence hydrate with configured volatility", async () => {
+    const storage = new MemoryStorage();
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      dexs: true,
+      storage,
+      caches: {
+        metadata: true,
+        contexts: { enabled: true, persist: true },
+        allMids: { enabled: true, persist: true },
+      },
+    });
+
+    await cache.refresh();
+
+    const hydrated = new HyperliquidMarketCache({ transport, dexs: true, storage });
+    hydrated.hydrate();
+    assertEquals(hydrated.getAssetId("dexB:AAA"), 120001);
+    assertEquals(hydrated.getPerpContext("dexA:AAA")?.openInterest, "100");
+    assertEquals(hydrated.getAllMids("dexB")?.AAA, "11.5");
+    assertEquals(hydrated.getMid("dexB:AAA"), "11.5");
   });
 });
