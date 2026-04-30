@@ -1,0 +1,60 @@
+name: Omni npm release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: npm package name to build and publish
+        required: true
+        default: "@intheta/hyperliquid"
+      version:
+        description: npm package version override, for example 0.32.2-omni.1. Empty uses deno.json version.
+        required: false
+        default: ""
+      tag:
+        description: npm dist tag
+        required: true
+        default: "omni"
+      dry_run:
+        description: Build and pack without publishing
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: denoland/setup-deno@v2
+
+      - name: Check source
+        run: deno task check
+
+      - name: Test market cache
+        run: deno test -A tests/utils/marketCache.test.ts
+
+      - name: Build and verify generated npm package
+        env:
+          NPM_PACKAGE_NAME: ${{ inputs.package_name }}
+          NPM_PACKAGE_VERSION: ${{ inputs.version }}
+          NPM_PACKAGE_HOMEPAGE: https://github.com/InTheta/hyperliquid
+          NPM_PACKAGE_REPOSITORY: git+https://github.com/InTheta/hyperliquid.git
+          NPM_PACKAGE_BUGS_URL: https://github.com/InTheta/hyperliquid/issues
+        run: deno task verify:npm
+
+      - name: Publish npm package
+        if: ${{ !inputs.dry_run }}
+        working-directory: ./build/npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public --tag "${{ inputs.tag }}"

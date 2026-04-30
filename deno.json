@@ -3,10 +3,11 @@
   "version": "0.32.2",
   "license": "MIT",
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno check --doc && deno task check:jsdoc && deno task check:export",
+    "check": "deno fmt --check && deno lint && deno check --doc src/mod.ts src/signing/mod.ts src/utils/mod.ts src/api/exchange/mod.ts src/api/info/mod.ts src/api/subscription/mod.ts && deno task check:jsdoc && deno task check:export",
     "check:jsdoc": "deno run -A .dev/jsdoc_sync_check.ts",
     "check:export": "deno run -A .dev/export_sync_check.ts",
     "build:npm": "deno run -A .github/scripts/build_npm.ts",
+    "verify:npm": "deno run -A .github/scripts/verify_npm_package.ts",
     "publish:npm-dist-branch": "deno run -A .github/scripts/publish_npm_dist_branch.ts"
   },
   "exports": {
@@ -18,9 +19,11 @@
     "./api/subscription": "./src/api/subscription/mod.ts"
   },
   "fmt": {
-    "lineWidth": 120
+    "lineWidth": 120,
+    "exclude": ["build"]
   },
   "lint": {
+    "exclude": ["build"],
     "rules": {
       "tags": ["recommended"],
       "include": [

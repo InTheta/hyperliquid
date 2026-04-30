@@ -12,6 +12,10 @@
 import { build, emptyDir } from "jsr:@deno/dnt@^0.42.3";
 import denoJson from "../../deno.json" with { type: "json" };
 
+function env(name: string, fallback: string): string {
+  return Deno.env.get(name)?.trim() || fallback;
+}
+
 /**
  * Convert part of jsr dependencies to npm in deno.json imports.
  * HACK: I don't know of any other way to instruct `@deno/dnt` to convert jsr dependencies into npm equivalents.
@@ -42,6 +46,19 @@ async function modifyImports(): Promise<() => Promise<void>> {
 
 const restoreConfig = await modifyImports();
 try {
+  const packageName = env("NPM_PACKAGE_NAME", denoJson.name);
+  const packageVersion = env("NPM_PACKAGE_VERSION", denoJson.version);
+  const packageDescription = env(
+    "NPM_PACKAGE_DESCRIPTION",
+    "Hyperliquid API SDK for all major JS runtimes, written in TypeScript.",
+  );
+  const packageHomepage = env("NPM_PACKAGE_HOMEPAGE", "https://github.com/InTheta/hyperliquid");
+  const packageRepository = env("NPM_PACKAGE_REPOSITORY", "git+https://github.com/InTheta/hyperliquid.git");
+  const packageBugsUrl = env("NPM_PACKAGE_BUGS_URL", "https://github.com/InTheta/hyperliquid/issues");
+  const packageAuthorName = env("NPM_PACKAGE_AUTHOR_NAME", "nktkas / InTheta fork maintainers");
+  const packageAuthorEmail = env("NPM_PACKAGE_AUTHOR_EMAIL", "github.turk9@passmail.net");
+  const packageAuthorUrl = env("NPM_PACKAGE_AUTHOR_URL", "https://github.com/InTheta");
+
   await emptyDir("./build/npm");
   await build({
     entryPoints: Object.entries(denoJson.exports).map(([k, v]) => ({ name: k, path: v })),
@@ -50,9 +67,9 @@ try {
     typeCheck: "both",
     test: false,
     package: {
-      name: "@nktkas/hyperliquid",
-      version: denoJson.version,
-      description: "Hyperliquid API SDK for all major JS runtimes, written in TypeScript.",
+      name: packageName,
+      version: packageVersion,
+      description: packageDescription,
       keywords: [
         "api",
         "library",
@@ -67,19 +84,19 @@ try {
         "dex",
         "hyperliquid",
       ],
-      homepage: "https://github.com/nktkas/hyperliquid",
+      homepage: packageHomepage,
       bugs: {
-        url: "https://github.com/nktkas/hyperliquid/issues",
+        url: packageBugsUrl,
       },
       repository: {
         type: "git",
-        url: "git+https://github.com/nktkas/hyperliquid.git",
+        url: packageRepository,
       },
       license: "MIT",
       author: {
-        name: "nktkas",
-        email: "github.turk9@passmail.net",
-        url: "https://github.com/nktkas",
+        name: packageAuthorName,
+        email: packageAuthorEmail,
+        url: packageAuthorUrl,
       },
       sideEffects: false,
       engines: {
