@@ -109,6 +109,10 @@ export interface HyperliquidMarketRecord {
   maxLeverage?: number;
   marginTableId?: number;
   collateralToken?: number;
+  marginMode?: string;
+  onlyIsolated?: boolean;
+  supportsCross?: boolean;
+  strictIsolated?: boolean;
   context?: Record<string, unknown> | null;
   mid?: string;
   fundingRate?: string;
@@ -208,6 +212,10 @@ export interface HyperliquidOrderTicketInfo extends HyperliquidOrderPrecision {
   maxLeverage?: number;
   marginTableId?: number;
   collateralToken?: number;
+  marginMode?: string;
+  onlyIsolated?: boolean;
+  supportsCross?: boolean;
+  strictIsolated?: boolean;
   mid?: string;
   fundingRate?: string;
   context?: Record<string, unknown> | null;
@@ -485,6 +493,18 @@ function normalizeDexEntries<T>(
 
 function normalizePerpCtx(ctx: unknown): Record<string, unknown> | null {
   return isRecord(ctx) ? ctx : null;
+}
+
+function marginConstraints(
+  asset: { marginMode?: unknown; onlyIsolated?: unknown },
+): Pick<HyperliquidMarketRecord, "marginMode" | "onlyIsolated" | "supportsCross" | "strictIsolated"> {
+  const marginMode = typeof asset.marginMode === "string" && asset.marginMode.length > 0 ? asset.marginMode : undefined;
+  const onlyIsolated = asset.onlyIsolated === true ? true : undefined;
+  const strictIsolated = marginMode === "strictIsolated" ? true : undefined;
+  const supportsCross = onlyIsolated === true || marginMode === "noCross" || marginMode === "strictIsolated"
+    ? false
+    : undefined;
+  return { marginMode, onlyIsolated, supportsCross, strictIsolated };
 }
 
 function sortMarkets(
@@ -1153,6 +1173,10 @@ export class HyperliquidMarketCache {
       maxLeverage: record.maxLeverage,
       marginTableId: record.marginTableId,
       collateralToken: record.collateralToken,
+      marginMode: record.marginMode,
+      onlyIsolated: record.onlyIsolated,
+      supportsCross: record.supportsCross,
+      strictIsolated: record.strictIsolated,
       mid: record.mid,
       fundingRate: record.fundingRate,
       context: record.context,
@@ -1349,6 +1373,7 @@ export class HyperliquidMarketCache {
           maxLeverage: Number.isFinite(Number(asset.maxLeverage)) ? Number(asset.maxLeverage) : undefined,
           marginTableId: Number.isFinite(Number(asset.marginTableId)) ? Number(asset.marginTableId) : undefined,
           collateralToken: Number.isFinite(Number(meta?.collateralToken)) ? Number(meta.collateralToken) : undefined,
+          ...marginConstraints(asset),
           context: ctx,
           mid: typeof ctx?.midPx === "string" ? ctx.midPx : typeof ctx?.markPx === "string" ? ctx.markPx : undefined,
           fundingRate: typeof ctx?.funding === "string" ? ctx.funding : undefined,

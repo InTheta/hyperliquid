@@ -30,7 +30,7 @@ class MockInfoTransport implements IRequestTransport {
     if (req.type === "metaAndAssetCtxs" && req.dex === "dexA") {
       return Promise.resolve([
         {
-          universe: [{ name: "AAA", szDecimals: 1, maxLeverage: 3, marginTableId: 11 }],
+          universe: [{ name: "AAA", szDecimals: 1, maxLeverage: 3, marginTableId: 11, marginMode: "noCross" }],
           marginTables: [],
           collateralToken: 1,
         },
@@ -42,7 +42,7 @@ class MockInfoTransport implements IRequestTransport {
       return Promise.resolve([
         {
           universe: [
-            { name: "BBB", szDecimals: 2, maxLeverage: 4, marginTableId: 12 },
+            { name: "BBB", szDecimals: 2, maxLeverage: 4, marginTableId: 12, marginMode: "strictIsolated" },
             { name: "AAA", szDecimals: 3, maxLeverage: 4, marginTableId: 14 },
           ],
           marginTables: [],
@@ -58,7 +58,7 @@ class MockInfoTransport implements IRequestTransport {
     if (req.type === "metaAndAssetCtxs" && req.dex === "dexC") {
       return Promise.resolve([
         {
-          universe: [{ name: "CCC", szDecimals: 0, maxLeverage: 2, marginTableId: 13 }],
+          universe: [{ name: "CCC", szDecimals: 0, maxLeverage: 2, marginTableId: 13, onlyIsolated: true }],
           marginTables: [],
           collateralToken: 3,
         },
@@ -71,7 +71,7 @@ class MockInfoTransport implements IRequestTransport {
         {
           universe: [
             { name: "BTC", szDecimals: 5, maxLeverage: 50, marginTableId: 1 },
-            { name: "ETH", szDecimals: 4, maxLeverage: 25, marginTableId: 2 },
+            { name: "ETH", szDecimals: 4, maxLeverage: 25, marginTableId: 2, marginMode: "strictIsolated" },
             { name: "AAA", szDecimals: 3, maxLeverage: 5, marginTableId: 3 },
           ],
           marginTables: [],
@@ -405,8 +405,16 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.resolveMarket("main:BTC")?.symbol, btc?.symbol);
     assertEquals(cache.resolveMarket("main:BTC-PERP")?.symbol, btc?.symbol);
     assertEquals(cache.resolveMarket(0)?.symbol, btc?.symbol);
+    assertEquals(btc?.marginMode, undefined);
+    assertEquals(btc?.onlyIsolated, undefined);
+    assertEquals(btc?.supportsCross, undefined);
     assertEquals(cache.getMarketKey("BTC"), "main:BTC");
     assertEquals(cache.getQualifiedName("BTC"), "BTC");
+
+    const strictMain = cache.resolveMarket("ETH");
+    assertEquals(strictMain?.marginMode, "strictIsolated");
+    assertEquals(strictMain?.strictIsolated, true);
+    assertEquals(strictMain?.supportsCross, false);
 
     const mainDuplicate = cache.resolveMarket("AAA");
     assertEquals(mainDuplicate?.symbol, "hyperliquid:AAA:USDC:perp");
@@ -418,14 +426,19 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(cache.resolveMarket(110000)?.symbol, builder?.symbol);
     assertEquals(cache.getCoin("dexA:AAA"), "AAA");
     assertEquals(cache.getMarketKey("dexA:AAA"), "dexA:AAA");
+    assertEquals(builder?.marginMode, "noCross");
+    assertEquals(builder?.supportsCross, false);
     assertEquals(cache.resolveMarket("dexB:AAA")?.assetId, 120001);
     assertEquals(cache.resolveMarket("dexB:AAA-PERP")?.symbol, "hyperliquid:dexB:AAA:USDC:perp");
+    assertEquals(cache.resolveMarket("dexB:BBB")?.strictIsolated, true);
 
     const collateral = cache.resolveMarket("dexC:CCC");
     assertEquals(cache.resolveMarket("dexC:CCC-PERP")?.symbol, collateral?.symbol);
     assertEquals(cache.resolveMarket(130000)?.symbol, collateral?.symbol);
     assertEquals(collateral?.quote, "USDH");
     assertEquals(collateral?.collateralToken, 3);
+    assertEquals(collateral?.onlyIsolated, true);
+    assertEquals(collateral?.supportsCross, false);
 
     const spot = cache.resolveMarket("@107");
     assertEquals(cache.resolveMarket("107")?.symbol, spot?.symbol);
@@ -530,6 +543,7 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(btc?.mid, "100010");
     assertEquals(btc?.fundingRate, "0.0001");
     assertEquals(btc?.maxLeverage, 50);
+    assertEquals(btc?.supportsCross, undefined);
 
     const builder = cache.getOrderTicketInfo("dexA:AAA", 12.345);
     assertEquals(builder?.base, "dexA:AAA");
@@ -540,6 +554,8 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(builder?.priceStep, 0.001);
     assertEquals(builder?.sizeStep, 0.1);
     assertEquals(builder?.maxLeverage, 3);
+    assertEquals(builder?.marginMode, "noCross");
+    assertEquals(builder?.supportsCross, false);
 
     const collateral = cache.getOrderTicketInfo("dexC:CCC", 1.23456);
     assertEquals(collateral?.base, "dexC:CCC");
@@ -552,6 +568,8 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(collateral?.sizeStep, 1);
     assertEquals(collateral?.displayPriceStep, 0.0001);
     assertEquals(collateral?.effectiveSubmitPriceStep, 0.0001);
+    assertEquals(collateral?.onlyIsolated, true);
+    assertEquals(collateral?.supportsCross, false);
 
     const spot = cache.getOrderTicketInfo("BTC-SPOT", 100000);
     assertEquals(spot?.base, "BTC");
@@ -911,6 +929,8 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     hydrated.hydrate();
 
     assertEquals(hydrated.getAssetId("dexA:AAA"), 110000);
+    assertEquals(hydrated.resolveMarket("dexA:AAA")?.marginMode, "noCross");
+    assertEquals(hydrated.resolveMarket("dexA:AAA")?.supportsCross, false);
     assertEquals(hydrated.getAllMids(), undefined);
     assertEquals(hydrated.getMid("BTC"), "100000");
   });

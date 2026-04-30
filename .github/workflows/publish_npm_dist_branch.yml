@@ -1,0 +1,28 @@
+name: Publish npm dist branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Git branch to force-push with the generated npm package root
+        required: true
+        default: codex/nomeida-market-cache-npm-dist
+
+jobs:
+  publish-npm-dist-branch:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+
+      - name: Publish generated npm dist branch
+        env:
+          DIST_BRANCH: ${{ inputs.branch }}
+          DIST_REMOTE: origin
+        run: npx deno task publish:npm-dist-branch

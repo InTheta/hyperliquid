@@ -5,7 +5,9 @@
   "tasks": {
     "check": "deno fmt --check && deno lint && deno check --doc && deno task check:jsdoc && deno task check:export",
     "check:jsdoc": "deno run -A .dev/jsdoc_sync_check.ts",
-    "check:export": "deno run -A .dev/export_sync_check.ts"
+    "check:export": "deno run -A .dev/export_sync_check.ts",
+    "build:npm": "deno run -A .github/scripts/build_npm.ts",
+    "publish:npm-dist-branch": "deno run -A .github/scripts/publish_npm_dist_branch.ts"
   },
   "exports": {
     ".": "./src/mod.ts",
