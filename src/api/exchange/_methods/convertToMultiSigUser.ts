@@ -1,0 +1,184 @@
+import * as v from "valibot";
+
+// ============================================================
+// API Schemas
+// ============================================================
+
+import { Address, Hex, UnsignedInteger } from "../../_schemas.js";
+
+/** Multi-sig config or `null` to revert to single-sig. */
+const ConvertToMultiSigUserRequestSignersSchema = /* @__PURE__ */ (() => {
+  return v.nullable(
+    /** Multi-signature configuration. */
+    v.object({
+      /** List of authorized user addresses. */
+      authorizedUsers: v.array(Address),
+      /** Minimum number of signatures required. */
+      threshold: v.pipe(UnsignedInteger, v.minValue(1), v.maxValue(10)),
+    }),
+  );
+})();
+
+/**
+ * Convert a single-signature account to a multi-signature account or vice versa.
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/multi-sig
+ */
+export const ConvertToMultiSigUserRequest = /* @__PURE__ */ (() => {
+  return v.object({
+    /** Action to perform. */
+    action: v.object({
+      /** Type of action. */
+      type: v.literal("convertToMultiSigUser"),
+      /** Chain ID in hex format for EIP-712 signing. */
+      signatureChainId: Hex,
+      /** HyperLiquid network type. */
+      hyperliquidChain: v.picklist(["Mainnet", "Testnet"]),
+      /**
+       * Signers configuration.
+       *
+       * Must be `ConvertToMultiSigUserRequestSignersSchema` converted to a string via `JSON.stringify(...)`.
+       */
+      signers: v.union([
+        v.pipe(
+          v.string(),
+          v.parseJson(),
+          ConvertToMultiSigUserRequestSignersSchema,
+          v.stringifyJson(),
+        ),
+        v.pipe(
+          ConvertToMultiSigUserRequestSignersSchema,
+          v.stringifyJson(),
+        ),
+      ]),
+      /** Nonce (timestamp in ms) used to prevent replay attacks. */
+      nonce: UnsignedInteger,
+    }),
+    /** Nonce (timestamp in ms) used to prevent replay attacks. */
+    nonce: UnsignedInteger,
+    /** ECDSA signature components. */
+    signature: v.object({
+      /** First 32-byte component. */
+      r: v.pipe(Hex, v.length(66)),
+      /** Second 32-byte component. */
+      s: v.pipe(Hex, v.length(66)),
+      /** Recovery identifier. */
+      v: v.picklist([27, 28]),
+    }),
+  });
+})();
+export type ConvertToMultiSigUserRequest = v.InferOutput<typeof ConvertToMultiSigUserRequest>;
+
+/**
+ * Successful response without specific data or error response.
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/multi-sig
+ */
+export type ConvertToMultiSigUserResponse =
+  | {
+    /** Successful status. */
+    status: "ok";
+    /** Response details. */
+    response: {
+      /** Type of response. */
+      type: "default";
+    };
+  }
+  | {
+    /** Error status. */
+    status: "err";
+    /** Error message. */
+    response: string;
+  };
+
+// ============================================================
+// Execution Logic
+// ============================================================
+
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
+import type { ExcludeErrorResponse } from "./_base/errors.js";
+import { type ExchangeConfig, executeUserSignedAction, type ExtractRequestOptions } from "./_base/execute.js";
+
+/** Schema for action fields (excludes request-level system fields). */
+const ConvertToMultiSigUserActionSchema = /* @__PURE__ */ (() => {
+  return v.omit(
+    v.object(ConvertToMultiSigUserRequest.entries.action.entries),
+    ["signatureChainId", "hyperliquidChain", "nonce"],
+  );
+})();
+
+/** Action parameters for the {@linkcode convertToMultiSigUser} function. */
+export type ConvertToMultiSigUserParameters = Omit<v.InferInput<typeof ConvertToMultiSigUserActionSchema>, "type">;
+
+/** Request options for the {@linkcode convertToMultiSigUser} function. */
+export type ConvertToMultiSigUserOptions = ExtractRequestOptions<v.InferInput<typeof ConvertToMultiSigUserRequest>>;
+
+/** Successful variant of {@linkcode ConvertToMultiSigUserResponse} without errors. */
+export type ConvertToMultiSigUserSuccessResponse = ExcludeErrorResponse<ConvertToMultiSigUserResponse>;
+
+/** EIP-712 types for the {@linkcode convertToMultiSigUser} function. */
+export const ConvertToMultiSigUserTypes = {
+  "HyperliquidTransaction:ConvertToMultiSigUser": [
+    { name: "hyperliquidChain", type: "string" },
+    { name: "signers", type: "string" },
+    { name: "nonce", type: "uint64" },
+  ],
+};
+
+/**
+ * Convert a single-signature account to a multi-signature account or vice versa.
+ *
+ * Signing: User-Signed EIP-712.
+ *
+ * @param config General configuration for Exchange API requests.
+ * @param params Parameters specific to the API request.
+ * @param opts Request execution options.
+ * @return Successful response without specific data.
+ *
+ * @throws {ValidationError} When the request parameters fail validation (before sending).
+ * @throws {TransportError} When the transport layer throws an error.
+ * @throws {ApiRequestError} When the API returns an unsuccessful response.
+ *
+ * @example Convert to multi-sig user
+ * ```ts
+ * import { HttpTransport } from "@nktkas/hyperliquid";
+ * import { convertToMultiSigUser } from "@nktkas/hyperliquid/api/exchange";
+ * import { privateKeyToAccount } from "npm:viem/accounts";
+ *
+ * const wallet = privateKeyToAccount("0x..."); // viem or ethers
+ * const transport = new HttpTransport(); // or `WebSocketTransport`
+ *
+ * await convertToMultiSigUser({ transport, wallet }, {
+ *   signers: {
+ *     authorizedUsers: ["0x...", "0x...", "0x..."],
+ *     threshold: 2,
+ *   },
+ * });
+ * ```
+ *
+ * @example Convert to single-sig user
+ * ```ts
+ * import { HttpTransport } from "@nktkas/hyperliquid";
+ * import { convertToMultiSigUser } from "@nktkas/hyperliquid/api/exchange";
+ * import { privateKeyToAccount } from "npm:viem/accounts";
+ *
+ * const wallet = privateKeyToAccount("0x..."); // viem or ethers
+ * const transport = new HttpTransport(); // or `WebSocketTransport`
+ *
+ * await convertToMultiSigUser({ transport, wallet }, {
+ *   signers: null,
+ * });
+ * ```
+ *
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/multi-sig
+ */
+export function convertToMultiSigUser(
+  config: ExchangeConfig,
+  params: ConvertToMultiSigUserParameters,
+  opts?: ConvertToMultiSigUserOptions,
+): Promise<ConvertToMultiSigUserSuccessResponse> {
+  const action = canonicalize(
+    ConvertToMultiSigUserActionSchema,
+    parse(ConvertToMultiSigUserActionSchema, { type: "convertToMultiSigUser", ...params }),
+  );
+  return executeUserSignedAction(config, action, ConvertToMultiSigUserTypes, opts);
+}

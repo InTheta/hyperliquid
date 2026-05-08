@@ -1,0 +1,365 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SymbolConverter = void 0;
+const mod_js_1 = require("../api/info/mod.js");
+function normalizeSpotPairId(value) {
+    const text = String(value ?? "").trim();
+    if (!text)
+        return "";
+    if (/^\d+$/.test(text))
+        return `@${text}`;
+    return text;
+}
+function uniqueNames(values) {
+    const out = [];
+    const seen = new Set();
+    for (const value of values) {
+        const text = String(value ?? "").trim();
+        if (!text || seen.has(text))
+            continue;
+        seen.add(text);
+        out.push(text);
+    }
+    return out;
+}
+/**
+ * Utility class for converting asset symbols to their corresponding IDs and size decimals.
+ * Supports perpetuals, spot markets, and optional builder dexs.
+ *
+ * @example
+ * ```ts
+ * import { HttpTransport } from "@nktkas/hyperliquid";
+ * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+ *
+ * const transport = new HttpTransport(); // or `WebSocketTransport`
+ * const converter = await SymbolConverter.create({ transport });
+ *
+ * // By default, dexs are not loaded; specify them when creating an instance
+ * // const converter = await SymbolConverter.create({ transport, dexs: ["test"] });
+ *
+ * const btcId = converter.getAssetId("BTC"); // perpetual → 0
+ * const hypeUsdcId = converter.getAssetId("HYPE/USDC"); // spot market → 10107
+ * const dexAbcId = converter.getAssetId("test:ABC"); // builder dex (if enabled) → 110000
+ *
+ * const btcSzDecimals = converter.getSzDecimals("BTC"); // perpetual → 5
+ * const hypeUsdcSzDecimals = converter.getSzDecimals("HYPE/USDC"); // spot market → 2
+ * const dexAbcSzDecimals = converter.getSzDecimals("test:ABC"); // builder dex (if enabled) → 0
+ *
+ * const spotPairId = converter.getSpotPairId("HFUN/USDC"); // → "@2"
+ *
+ * const symbol = converter.getSymbolBySpotPairId("@107"); // → "HYPE/USDC"
+ * ```
+ *
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/asset-ids
+ */
+class SymbolConverter {
+    _transport;
+    _dexOption;
+    _nameToAssetId = new Map();
+    _nameToSzDecimals = new Map();
+    _nameToSpotPairId = new Map();
+    _spotPairIdToName = new Map();
+    _refreshIntervalMs;
+    _refreshTimer;
+    _autoRefresh;
+    /**
+     * Creates a new SymbolConverter instance, but does not initialize it.
+     * Run {@link reload} to load asset data or use {@link create} to create and initialize in one step.
+     *
+     * @param options Configuration options including transport and optional dex support.
+     */
+    constructor(options) {
+        this._transport = options.transport;
+        this._dexOption = options.dexs ?? false;
+        this._refreshIntervalMs = options.refreshIntervalMs ?? 60_000;
+        this._autoRefresh = options.autoRefresh ?? false;
+    }
+    /**
+     * Create and initialize a SymbolConverter instance.
+     *
+     * @param options Configuration options including transport and optional dex support.
+     * @return Initialized SymbolConverter instance.
+     *
+     * @example
+     * ```ts
+     * import { HttpTransport } from "@nktkas/hyperliquid";
+     * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+     *
+     * const transport = new HttpTransport(); // or `WebSocketTransport`
+     * const converter = await SymbolConverter.create({ transport });
+     * ```
+     */
+    static async create(options) {
+        const instance = new SymbolConverter(options);
+        await instance.reload();
+        return instance;
+    }
+    /**
+     * Reload asset mappings from the API.
+     *
+     * Useful for refreshing data when new assets are added.
+     */
+    async reload() {
+        const config = { transport: this._transport };
+        const needDexs = this._dexOption === true || (Array.isArray(this._dexOption) && this._dexOption.length > 0);
+        const [perpMetaData, spotMetaData, perpDexsData] = await Promise.all([
+            (0, mod_js_1.meta)(config),
+            (0, mod_js_1.spotMeta)(config),
+            needDexs ? (0, mod_js_1.perpDexs)(config) : undefined,
+        ]);
+        if (!perpMetaData?.universe?.length) {
+            throw new Error("Invalid perpetual metadata response");
+        }
+        if (!spotMetaData?.universe?.length || !spotMetaData?.tokens?.length) {
+            throw new Error("Invalid spot metadata response");
+        }
+        this._nameToAssetId.clear();
+        this._nameToSzDecimals.clear();
+        this._nameToSpotPairId.clear();
+        this._spotPairIdToName.clear();
+        this._processDefaultPerps(perpMetaData);
+        this._processSpotAssets(spotMetaData);
+        // Only process builder dexs if dex support is enabled
+        if (perpDexsData) {
+            await this._processBuilderDexs(perpDexsData);
+        }
+        if (this._autoRefresh && !this.isAutoRefreshEnabled())
+            this.startAutoRefresh();
+    }
+    /** Alias for {@link reload}. */
+    refreshNow() {
+        return this.reload();
+    }
+    /**
+     * Starts automatic refresh of asset mappings.
+     *
+     * @param intervalMs Optional interval override in milliseconds.
+     */
+    startAutoRefresh(intervalMs) {
+        if (intervalMs !== undefined)
+            this._setRefreshInterval(intervalMs);
+        this._autoRefresh = true;
+        this._clearRefreshTimer();
+        this._refreshTimer = setInterval(() => {
+            void this.reload().catch(() => undefined);
+        }, this._refreshIntervalMs);
+    }
+    /** Stops automatic refresh of asset mappings. */
+    stopAutoRefresh() {
+        this._autoRefresh = false;
+        this._clearRefreshTimer();
+    }
+    /** Returns whether automatic refresh is currently active. */
+    isAutoRefreshEnabled() {
+        return this._refreshTimer !== undefined;
+    }
+    /**
+     * Sets the automatic refresh interval.
+     *
+     * Restarts automatic refresh if it is currently active.
+     *
+     * @param intervalMs Interval in milliseconds.
+     */
+    setAutoRefreshInterval(intervalMs) {
+        this._setRefreshInterval(intervalMs);
+        if (this.isAutoRefreshEnabled())
+            this.startAutoRefresh();
+    }
+    _setRefreshInterval(intervalMs) {
+        if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
+            throw new RangeError("Interval must be greater than 0");
+        }
+        this._refreshIntervalMs = intervalMs;
+    }
+    _clearRefreshTimer() {
+        clearInterval(this._refreshTimer);
+        this._refreshTimer = undefined;
+    }
+    _processDefaultPerps(perpMetaData) {
+        perpMetaData.universe.forEach((asset, index) => {
+            this._setNameAliases([
+                asset.name,
+                `${asset.name}-PERP`,
+                `main:${asset.name}`,
+                `main:${asset.name}-PERP`,
+            ], index, asset.szDecimals, false);
+        });
+    }
+    async _processBuilderDexs(perpDexsData) {
+        if (!perpDexsData || perpDexsData.length <= 1)
+            return;
+        const builderDexs = perpDexsData
+            .map((dex, index) => ({ dex, index }))
+            .filter((item) => {
+            return item.index > 0 && item.dex !== null && item.dex.name.length > 0;
+        });
+        if (builderDexs.length === 0)
+            return;
+        // Filter dexs based on the dexOption
+        const dexsToProcess = Array.isArray(this._dexOption)
+            ? builderDexs.filter((item) => this._dexOption.includes(item.dex.name))
+            : builderDexs; // true means process all
+        if (dexsToProcess.length === 0)
+            return;
+        const config = { transport: this._transport };
+        const results = await Promise.allSettled(dexsToProcess.map((item) => (0, mod_js_1.meta)(config, { dex: item.dex.name })));
+        results.forEach((result, idx) => {
+            if (result.status !== "fulfilled")
+                return;
+            this._processBuilderDexResult(result.value, dexsToProcess[idx].index, dexsToProcess[idx].dex.name);
+        });
+    }
+    _processBuilderDexResult(dexMeta, perpDexIndex, dexName) {
+        const offset = 100000 + perpDexIndex * 10000;
+        const normalizedDexName = String(dexName || "").trim();
+        dexMeta.universe.forEach((asset, index) => {
+            const assetId = offset + index;
+            const name = asset.name;
+            const coin = normalizedDexName && name.startsWith(`${normalizedDexName}:`)
+                ? name.slice(normalizedDexName.length + 1)
+                : name;
+            const qualifiedName = normalizedDexName ? `${normalizedDexName}:${coin}` : coin;
+            this._setNameAliases([
+                qualifiedName,
+                `${qualifiedName}-PERP`,
+                name,
+                `${name}-PERP`,
+                coin,
+                `${coin}-PERP`,
+            ], assetId, asset.szDecimals, true);
+        });
+    }
+    _processSpotAssets(spotMetaData) {
+        const tokenMap = new Map();
+        spotMetaData.tokens.forEach((token) => {
+            tokenMap.set(token.index, { name: token.name, szDecimals: token.szDecimals });
+        });
+        spotMetaData.universe.forEach((market) => {
+            if (market.tokens.length < 2)
+                return;
+            const baseToken = tokenMap.get(market.tokens[0]);
+            const quoteToken = tokenMap.get(market.tokens[1]);
+            if (!baseToken || !quoteToken)
+                return;
+            const assetId = 10000 + market.index;
+            const baseQuoteKey = `${baseToken.name}/${quoteToken.name}`;
+            const spotPairId = normalizeSpotPairId(market.name || market.index);
+            const canonicalPairId = `@${market.index}`;
+            const isUsdcPair = quoteToken.name === "USDC";
+            this._setNameAliases([
+                baseQuoteKey,
+                isUsdcPair ? `${baseToken.name}-SPOT` : undefined,
+                spotPairId,
+                canonicalPairId,
+                String(market.index),
+                assetId,
+            ], assetId, baseToken.szDecimals, true);
+            for (const name of uniqueNames([
+                baseQuoteKey,
+                isUsdcPair ? `${baseToken.name}-SPOT` : undefined,
+                spotPairId,
+                canonicalPairId,
+                market.index,
+            ])) {
+                this._nameToSpotPairId.set(name, spotPairId);
+            }
+            this._spotPairIdToName.set(spotPairId, baseQuoteKey);
+            this._spotPairIdToName.set(canonicalPairId, baseQuoteKey);
+            this._spotPairIdToName.set(String(market.index), baseQuoteKey);
+        });
+    }
+    _setNameAliases(names, assetId, szDecimals, preserveExisting) {
+        for (const name of uniqueNames(names)) {
+            if (preserveExisting && this._nameToAssetId.has(name))
+                continue;
+            this._nameToAssetId.set(name, assetId);
+            this._nameToSzDecimals.set(name, szDecimals);
+        }
+    }
+    /**
+     * Get asset ID for a coin.
+     * - For Perpetuals, use the coin name (e.g., "BTC").
+     * - For Spot markets, use the "BASE/QUOTE" format (e.g., "HYPE/USDC").
+     * - For Builder Dex assets, use the "DEX_NAME:ASSET_NAME" format (e.g., "test:ABC").
+     *
+     * @example
+     * ```ts
+     * import { HttpTransport } from "@nktkas/hyperliquid";
+     * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+     *
+     * const transport = new HttpTransport(); // or `WebSocketTransport`
+     * const converter = await SymbolConverter.create({ transport });
+     *
+     * converter.getAssetId("BTC"); // → 0
+     * converter.getAssetId("HYPE/USDC"); // → 10107
+     * converter.getAssetId("test:ABC"); // → 110000
+     * ```
+     */
+    getAssetId(name) {
+        return this._nameToAssetId.get(name);
+    }
+    /**
+     * Get size decimals for a coin.
+     * - For Perpetuals, use the coin name (e.g., "BTC").
+     * - For Spot markets, use the "BASE/QUOTE" format (e.g., "HYPE/USDC").
+     * - For Builder Dex assets, use the "DEX_NAME:ASSET_NAME" format (e.g., "test:ABC").
+     *
+     * @example
+     * ```ts
+     * import { HttpTransport } from "@nktkas/hyperliquid";
+     * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+     *
+     * const transport = new HttpTransport(); // or `WebSocketTransport`
+     * const converter = await SymbolConverter.create({ transport });
+     *
+     * converter.getSzDecimals("BTC"); // → 5
+     * converter.getSzDecimals("HYPE/USDC"); // → 2
+     * converter.getSzDecimals("test:ABC"); // → 0
+     * ```
+     */
+    getSzDecimals(name) {
+        return this._nameToSzDecimals.get(name);
+    }
+    /**
+     * Get spot pair ID for info endpoints and subscriptions (e.g., l2book, trades).
+     *
+     * Accepts spot markets in the "BASE/QUOTE" format (e.g., "HFUN/USDC").
+     *
+     * @example
+     * ```ts
+     * import { HttpTransport } from "@nktkas/hyperliquid";
+     * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+     *
+     * const transport = new HttpTransport(); // or `WebSocketTransport`
+     * const converter = await SymbolConverter.create({ transport });
+     *
+     * converter.getSpotPairId("HFUN/USDC"); // → "@2"
+     * converter.getSpotPairId("PURR/USDC"); // → "PURR/USDC" (exceptions exist for some pairs)
+     * ```
+     */
+    getSpotPairId(name) {
+        return this._nameToSpotPairId.get(name);
+    }
+    /**
+     * Get the symbol ("BASE/QUOTE") from a spot pair ID.
+     *
+     * Accepts pair IDs such as "@107" or "PURR/USDC".
+     *
+     * @example
+     * ```ts
+     * import { HttpTransport } from "@nktkas/hyperliquid";
+     * import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+     *
+     * const transport = new HttpTransport(); // or `WebSocketTransport`
+     * const converter = await SymbolConverter.create({ transport });
+     *
+     * converter.getSymbolBySpotPairId("@107"); // → "HYPE/USDC"
+     * converter.getSymbolBySpotPairId("PURR/USDC"); // → "PURR/USDC"
+     * ```
+     */
+    getSymbolBySpotPairId(pairId) {
+        return this._spotPairIdToName.get(normalizeSpotPairId(pairId));
+    }
+}
+exports.SymbolConverter = SymbolConverter;
+//# sourceMappingURL=_symbolConverter.js.map
