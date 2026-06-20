@@ -87,6 +87,7 @@ export class SymbolConverter {
   private _refreshIntervalMs: number;
   private _refreshTimer: ReturnType<typeof setInterval> | undefined;
   private _autoRefresh: boolean;
+  private _reloadPromise: Promise<void> | undefined;
 
   /**
    * Creates a new SymbolConverter instance, but does not initialize it.
@@ -127,7 +128,16 @@ export class SymbolConverter {
    *
    * Useful for refreshing data when new assets are added.
    */
-  async reload(): Promise<void> {
+  reload(): Promise<void> {
+    // Prevent concurrent reloads: if a reload is already in progress, return the existing promise.
+    if (this._reloadPromise) return this._reloadPromise;
+    this._reloadPromise = this._reload().finally(() => {
+      this._reloadPromise = undefined;
+    });
+    return this._reloadPromise;
+  }
+
+  private async _reload(): Promise<void> {
     const config = { transport: this._transport };
     const needDexs = this._dexOption === true || (Array.isArray(this._dexOption) && this._dexOption.length > 0);
 
