@@ -23,7 +23,8 @@ function env(name: string, fallback: string): string {
 async function modifyImports(): Promise<() => Promise<void>> {
   // Define mappings from jsr to npm
   const jsr2npm = {
-    "jsr:@nktkas/rews": "npm:@nktkas/rews",
+    // Keep rews vendored by dnt: its npm v4 package requires Node 22, while
+    // Omni's supported production runtime is Node 20.19.
     "jsr:@noble/hashes": "npm:@noble/hashes",
     // "jsr:@std/async": "...", // No npm equivalent available
     // "jsr:@std/msgpack": "...", // No npm equivalent available
