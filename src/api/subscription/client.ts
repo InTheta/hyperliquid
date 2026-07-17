@@ -69,6 +69,7 @@ import {
   type UserTwapSliceFillsEvent,
   type UserTwapSliceFillsParameters,
 } from "./_methods/userTwapSliceFills.ts";
+import { webData2, type WebData2Event, type WebData2Parameters } from "./_methods/webData2.ts";
 import { webData3, type WebData3Event, type WebData3Parameters } from "./_methods/webData3.ts";
 
 // ============================================================
@@ -1011,6 +1012,22 @@ export class SubscriptionClient<C extends SubscriptionConfig = SubscriptionConfi
   }
 
   /**
+   * Subscribe to the legacy `webData2` channel.
+   *
+   * New integrations should prefer {@linkcode webData3}; this method remains so
+   * existing consumers can upgrade without losing their account stream.
+   *
+   * @deprecated Prefer {@linkcode webData3} for new integrations.
+   */
+  webData2(
+    params: WebData2Parameters,
+    listener: (data: WebData2Event) => void,
+    options?: SubscriptionOptions,
+  ): Promise<ISubscription> {
+    return webData2(this.config_, params, listener, options);
+  }
+
+  /**
    * Subscribe to comprehensive user and market data updates.
    *
    * @param params Parameters specific to the API subscription.
@@ -1131,6 +1148,10 @@ export type {
   UserTwapSliceFillsEvent as UserTwapSliceFillsWsEvent,
   UserTwapSliceFillsParameters as UserTwapSliceFillsWsParameters,
 } from "./_methods/userTwapSliceFills.ts";
+export type {
+  WebData2Event as WebData2WsEvent,
+  WebData2Parameters as WebData2WsParameters,
+} from "./_methods/webData2.ts";
 export type {
   WebData3Event as WebData3WsEvent,
   WebData3Parameters as WebData3WsParameters,

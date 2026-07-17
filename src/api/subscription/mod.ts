@@ -52,4 +52,5 @@ export * from "./_methods/userHistoricalOrders.ts";
 export * from "./_methods/userNonFundingLedgerUpdates.ts";
 export * from "./_methods/userTwapHistory.ts";
 export * from "./_methods/userTwapSliceFills.ts";
+export * from "./_methods/webData2.ts";
 export * from "./_methods/webData3.ts";

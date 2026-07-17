@@ -266,7 +266,7 @@ export class WebSocketTransport implements IRequestTransport<"info" | "exchange"
    * transport.close();
    * ```
    */
-  close(): void {
+  close(): Promise<void> {
     // socket.close() terminates synchronously on every path: when it returns,
     // the termination signal is already aborted — there is nothing to await.
     //
@@ -275,5 +275,6 @@ export class WebSocketTransport implements IRequestTransport<"info" | "exchange"
     // the event being dispatched as its final one and never fires another, so
     // a listener added here would never be invoked.
     this.socket.close();
+    return Promise.resolve();
   }
 }
