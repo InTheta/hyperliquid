@@ -23,7 +23,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
           maxGas: v.nullable(UnsignedInteger),
           /** Contains new asset listing parameters. */
           assetRequest: v.object({
-            /** Coin symbol for the new asset. */
+            /** Asset symbol for the new asset. */
             coin: v.string(),
             /** Number of decimal places for size. */
             szDecimals: UnsignedInteger,
@@ -31,15 +31,15 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
             oraclePx: UnsignedDecimal,
             /** Margin table identifier for risk management. */
             marginTableId: UnsignedInteger,
-            /** 'strictIsolated' does not allow withdrawing of isolated margin from open position. */
-            marginMode: v.picklist(["strictIsolated", "noCross"]),
+            /** `"strictIsolated"` does not allow withdrawing of isolated margin from open position. */
+            marginMode: v.picklist(["strictIsolated", "noCross", "normal"]),
           }),
-          /** Name of the dex. */
+          /** DEX name. */
           dex: v.string(),
           /** Contains new dex parameters. */
           schema: v.nullable(
             v.object({
-              /** Full name of the dex. */
+              /** Full name of the DEX. */
               fullName: v.string(),
               /** Collateral token index. */
               collateralToken: UnsignedInteger,
@@ -58,7 +58,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
           maxGas: v.nullable(UnsignedInteger),
           /** Contains new asset listing parameters. */
           assetRequest: v.object({
-            /** Coin symbol for the new asset. */
+            /** Asset symbol for the new asset. */
             coin: v.string(),
             /** Number of decimal places for size. */
             szDecimals: UnsignedInteger,
@@ -69,12 +69,12 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
             /** Whether the asset can only be traded with isolated margin. */
             onlyIsolated: v.boolean(),
           }),
-          /** Name of the dex. */
+          /** DEX name. */
           dex: v.string(),
           /** Contains new dex parameters. */
           schema: v.nullable(
             v.object({
-              /** Full name of the dex. */
+              /** Full name of the DEX. */
               fullName: v.string(),
               /** Collateral token index. */
               collateralToken: UnsignedInteger,
@@ -89,7 +89,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
         type: v.literal("perpDeploy"),
         /** Parameters for setting oracle and mark prices for assets. */
         setOracle: v.object({
-          /** Name of the dex. */
+          /** DEX name. */
           dex: v.string(),
           /** A list (sorted by key) of asset and oracle prices. */
           oraclePxs: v.array(v.tuple([v.string(), UnsignedDecimal])),
@@ -116,7 +116,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
         type: v.literal("perpDeploy"),
         /** Parameters for halting or resuming trading for an asset. */
         haltTrading: v.object({
-          /** Coin symbol for the asset to halt or resume. */
+          /** Asset symbol for the asset to halt or resume. */
           coin: v.string(),
           /** Whether trading should be halted (true) or resumed (false). */
           isHalted: v.boolean(),
@@ -131,9 +131,38 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
       v.object({
         /** Type of action. */
         type: v.literal("perpDeploy"),
+        /** Parameters for inserting a margin table into a dex. */
+        insertMarginTable: v.object({
+          /** DEX name. */
+          dex: v.string(),
+          /** Margin table to insert. */
+          marginTable: v.object({
+            /** Description of the margin table. */
+            description: v.string(),
+            /**
+             * Margin tiers, sorted by increasing lower bound and decreasing max leverage.
+             * A maximum of 3 tiers is allowed.
+             */
+            marginTiers: v.pipe(
+              v.array(
+                v.object({
+                  /** Position notional value above which leverage is constrained by `maxLeverage`. */
+                  lowerBound: UnsignedInteger,
+                  /** Maximum leverage (between `1` and `50`). */
+                  maxLeverage: v.pipe(UnsignedInteger, v.minValue(1), v.maxValue(50)),
+                }),
+              ),
+              v.maxLength(3),
+            ),
+          }),
+        }),
+      }),
+      v.object({
+        /** Type of action. */
+        type: v.literal("perpDeploy"),
         /** Parameters for setting the fee recipient. */
         setFeeRecipient: v.object({
-          /** Name of the DEX. */
+          /** DEX name. */
           dex: v.string(),
           /** Address of the fee recipient. */
           feeRecipient: Address,
@@ -150,7 +179,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
         type: v.literal("perpDeploy"),
         /** A modification to sub-deployer permissions. */
         setSubDeployers: v.object({
-          /** Name of the DEX. */
+          /** DEX name. */
           dex: v.string(),
           /** A modification to sub-deployer permissions. */
           subDeployers: v.array(
@@ -176,7 +205,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
         type: v.literal("perpDeploy"),
         /** Set fee scale. */
         setFeeScale: v.object({
-          /** Name of the dex. */
+          /** DEX name. */
           dex: v.string(),
           /** Fee scale (between 0.0 and 3.0). */
           scale: UnsignedDecimal,
@@ -193,7 +222,7 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
         type: v.literal("perpDeploy"),
         /** Parameters for setting a perp annotation. */
         setPerpAnnotation: v.object({
-          /** Coin symbol for the asset to annotate. */
+          /** Asset symbol for the asset to annotate. */
           coin: v.string(),
           /** Classification label (max 15 characters). */
           category: v.string(),
@@ -204,6 +233,12 @@ export const PerpDeployRequest = /* @__PURE__ */ (() => {
           /** Keywords used as hints to match against searches. */
           keywords: v.array(v.string()),
         }),
+      }),
+      v.object({
+        /** Type of action. */
+        type: v.literal("perpDeploy"),
+        /** Name of the perp dex to disable. */
+        disableDex: v.string(),
       }),
     ]),
     /** Nonce (timestamp in ms) used to prevent replay attacks. */
@@ -250,8 +285,12 @@ export type PerpDeployResponse =
 
 import { parse } from "../../../_base.ts";
 import { canonicalize } from "../../../signing/mod.ts";
-import type { ExcludeErrorResponse } from "./_base/errors.ts";
-import { type ExchangeConfig, executeL1Action, type ExtractRequestOptions } from "./_base/execute.ts";
+import {
+  type ExchangeConfig,
+  type ExcludeErrorResponse,
+  executeL1Action,
+  type ExtractRequestOptions,
+} from "./_base/mod.ts";
 
 /** Schema for action fields (excludes request-level system fields). */
 const PerpDeployActionSchema = /* @__PURE__ */ (() => {

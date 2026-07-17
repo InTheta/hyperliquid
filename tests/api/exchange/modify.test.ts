@@ -47,7 +47,7 @@ runTest({
         return { params, result: await exchClient.modify(params) };
       })(),
     ]);
-    // filled | Ioc
+    // filled | Ioc | always place
     const ioc = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: ModifyParameters = {
@@ -60,10 +60,11 @@ runTest({
           r: false,
           t: { limit: { tif: "Ioc" } },
         },
+        a: true,
       };
       return { params, result: await exchClient.modify(params) };
     })();
-    // filled | FrontendMarket
+    // filled | FrontendMarket | always place
     const frontendMarket = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: ModifyParameters = {
@@ -76,10 +77,11 @@ runTest({
           r: false,
           t: { limit: { tif: "FrontendMarket" } },
         },
+        a: true,
       };
       return { params, result: await exchClient.modify(params) };
     })();
-    // resting | trigger | tp
+    // resting | trigger | tp | always place
     const triggerTp = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: ModifyParameters = {
@@ -92,10 +94,11 @@ runTest({
           r: false,
           t: { trigger: { isMarket: true, triggerPx: order.pxUp, tpsl: "tp" } },
         },
+        a: true,
       };
       return { params, result: await exchClient.modify(params) };
     })();
-    // resting | trigger | sl
+    // resting | trigger | sl | always place
     const triggerSl = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: ModifyParameters = {
@@ -108,6 +111,7 @@ runTest({
           r: false,
           t: { trigger: { isMarket: false, triggerPx: order.pxDown, tpsl: "sl" } },
         },
+        a: true,
       };
       return { params, result: await exchClient.modify(params) };
     })();

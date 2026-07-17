@@ -18,6 +18,12 @@ export const L2BookRequest = /* @__PURE__ */ (() => {
     nSigFigs: v.nullish(v.picklist([2, 3, 4, 5])),
     /** Mantissa for aggregation (if `nSigFigs` is 5). */
     mantissa: v.nullish(v.picklist([2, 5])),
+    /**
+     * Whether to receive faster, shallower order book snapshots.
+     * - `true`: 5 levels every 0.5 seconds.
+     * - `false`: 20 levels every 5 seconds.
+     */
+    fast: v.optional(v.boolean()),
   });
 })();
 export type L2BookRequest = v.InferOutput<typeof L2BookRequest>;
@@ -42,17 +48,24 @@ type L2BookLevel = {
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions
  */
 export type L2BookEvent = {
-  /** Asset symbol. */
+  /** Asset symbol (e.g., BTC). */
   coin: string;
   /** Timestamp of the snapshot (in ms since epoch). */
   time: number;
   /** Bid and ask levels (index 0 = bids, index 1 = asks). */
-  levels: [bids: L2BookLevel[], asks: L2BookLevel[]];
+  levels: [
+    /** Bid levels. */
+    bids: L2BookLevel[],
+    /** Ask levels. */
+    asks: L2BookLevel[],
+  ];
   /**
    * Spread (only present when `nSigFigs` is non-null).
    * @pattern ^[0-9]+(\.[0-9]+)?$
    */
   spread?: string;
+  /** Indicates a fast-mode snapshot (only present when subscribed with `fast: true`). */
+  fast?: true;
 };
 
 // ============================================================
@@ -61,7 +74,7 @@ export type L2BookEvent = {
 
 import { parse } from "../../../_base.ts";
 import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig } from "./_types.ts";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode l2Book} function. */
 export type L2BookParameters = Omit<v.InferInput<typeof L2BookRequest>, "type">;
@@ -72,6 +85,7 @@ export type L2BookParameters = Omit<v.InferInput<typeof L2BookRequest>, "type">;
  * @param config General configuration for Subscription API subscriptions.
  * @param params Parameters specific to the API subscription.
  * @param listener A callback function to be called when the event is received.
+ * @param options Options to control the subscription lifecycle.
  * @return A request-promise that resolves with a {@link ISubscription} object to manage the subscription lifecycle.
  *
  * @throws {ValidationError} When the request parameters fail validation (before sending).
@@ -97,6 +111,7 @@ export function l2Book(
   config: SubscriptionConfig,
   params: L2BookParameters,
   listener: (data: L2BookEvent) => void,
+  options?: SubscriptionOptions,
 ): Promise<ISubscription> {
   const payload = parse(L2BookRequest, {
     type: "l2Book",
@@ -108,5 +123,5 @@ export function l2Book(
     if (e.detail.coin === payload.coin) {
       listener(e.detail);
     }
-  });
+  }, options);
 }

@@ -35,7 +35,9 @@ export type UserEventsEvent =
   | {
     /** Funding update details. */
     funding: {
-      /** Asset symbol. */
+      /** Timestamp of the funding event (in ms since epoch). */
+      time: number;
+      /** Asset symbol (e.g., BTC). */
       coin: string;
       /**
        * Amount transferred in USDC.
@@ -107,7 +109,7 @@ export type UserEventsEvent =
 
 import { parse } from "../../../_base.ts";
 import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig } from "./_types.ts";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode userEvents} function. */
 export type UserEventsParameters = Omit<v.InferInput<typeof UserEventsRequest>, "type">;
@@ -118,6 +120,7 @@ export type UserEventsParameters = Omit<v.InferInput<typeof UserEventsRequest>, 
  * @param config General configuration for Subscription API subscriptions.
  * @param params Parameters specific to the API subscription.
  * @param listener A callback function to be called when the event is received.
+ * @param options Options to control the subscription lifecycle.
  * @return A request-promise that resolves with a {@link ISubscription} object to manage the subscription lifecycle.
  *
  * @throws {ValidationError} When the request parameters fail validation (before sending).
@@ -143,9 +146,10 @@ export function userEvents(
   config: SubscriptionConfig,
   params: UserEventsParameters,
   listener: (data: UserEventsEvent) => void,
+  options?: SubscriptionOptions,
 ): Promise<ISubscription> {
   const payload = parse(UserEventsRequest, { type: "userEvents", ...params });
   return config.transport.subscribe<UserEventsEvent>("user", payload, (e) => {
     listener(e.detail);
-  });
+  }, options);
 }

@@ -26,6 +26,8 @@ export const CancelByCloidRequest = /* @__PURE__ */ (() => {
           cloid: Cloid,
         }),
       ),
+      /** Prioritize this cancel in the mempool (fast cancel). */
+      f: v.optional(v.literal(true)),
     }),
     /** Nonce (timestamp in ms) used to prevent replay attacks. */
     nonce: UnsignedInteger,
@@ -58,8 +60,12 @@ export type CancelByCloidResponse = CancelResponse;
 
 import { parse } from "../../../_base.ts";
 import { canonicalize } from "../../../signing/mod.ts";
-import type { ExcludeErrorResponse } from "./_base/errors.ts";
-import { type ExchangeConfig, executeL1Action, type ExtractRequestOptions } from "./_base/execute.ts";
+import {
+  type ExchangeConfig,
+  type ExcludeErrorResponse,
+  executeL1Action,
+  type ExtractRequestOptions,
+} from "./_base/mod.ts";
 
 /** Schema for action fields (excludes request-level system fields). */
 const CancelByCloidActionSchema = /* @__PURE__ */ (() => {

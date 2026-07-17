@@ -3,6 +3,16 @@
  *
  * Use {@link HttpTransport} for simple requests via HTTP POST.
  *
+ * ---
+ *
+ * ```text
+ * HttpTransport.request():
+ *   controller ◄─ timeout / user signal / fetchOptions.signal
+ *    └─► fetch ┬─► non-OK or non-JSON body ─► HttpRequestError(response, detail)
+ *              └─► parse JSON ─► T
+ *     catch: classify by reference ─► finally: cancel timer, detach
+ * ```
+ *
  * @example
  * ```ts
  * import { HttpTransport, InfoClient } from "@nktkas/hyperliquid";
@@ -17,135 +27,14 @@
  */
 
 import { type IRequestTransport, TransportError } from "../_base.ts";
-import { AbortSignal_ } from "../_polyfills.ts";
-
-export type SleepFn = (ms: number, signal?: AbortSignal) => Promise<void>;
-export type NowFn = () => number;
-
-/** Options for {@link TokenBucketRateLimiter}. */
-export interface TokenBucketRateLimiterOptions {
-  /**
-   * Maximum tokens available at once.
-   *
-   * Default: `100`
-   */
-  capacity?: number;
-  /**
-   * Number of tokens refilled per second.
-   *
-   * Default: `10`
-   */
-  refillRate?: number;
-  /**
-   * Initial number of tokens.
-   *
-   * Default: same as `capacity`
-   */
-  initialTokens?: number;
-  /** Custom time source in milliseconds. */
-  now?: NowFn;
-  /** Custom sleep function. */
-  sleep?: SleepFn;
-}
-
-/** Token bucket rate limiter for Hyperliquid request weights. */
-export class TokenBucketRateLimiter {
-  capacity: number;
-  refillRate: number;
-
-  protected _tokens: number;
-  protected _lastRefill: number;
-  protected _now: NowFn;
-  protected _sleep: SleepFn;
-
-  /**
-   * Creates a token bucket rate limiter.
-   *
-   * @param options Configuration options.
-   */
-  constructor(options?: TokenBucketRateLimiterOptions) {
-    this.capacity = options?.capacity ?? 100;
-    this.refillRate = options?.refillRate ?? 10;
-    if (this.capacity <= 0) throw new RangeError("Capacity must be greater than 0");
-    if (this.refillRate <= 0) throw new RangeError("Refill rate must be greater than 0");
-
-    this._tokens = Math.max(0, Math.min(options?.initialTokens ?? this.capacity, this.capacity));
-    this._now = options?.now ?? Date.now;
-    this._sleep = options?.sleep ?? sleep;
-    this._lastRefill = this._now();
-  }
-
-  /**
-   * Waits until the requested weight is available and consumes it.
-   *
-   * @param weight Number of tokens to consume.
-   * @param signal Optional signal to cancel the wait.
-   */
-  async waitForToken(weight?: number, signal?: AbortSignal): Promise<void> {
-    const weight_ = weight ?? 1;
-    if (weight_ <= 0) throw new RangeError("Weight must be greater than 0");
-    if (weight_ > this.capacity) throw new RangeError("Weight cannot exceed capacity");
-
-    while (true) {
-      if (signal?.aborted) throw signal.reason;
-      this._refill();
-      if (this._tokens >= weight_) {
-        this._tokens -= weight_;
-        return;
-      }
-
-      const waitMs = ((weight_ - this._tokens) / this.refillRate) * 1000;
-      await this._sleep(waitMs, signal);
-    }
-  }
-
-  /** Refills tokens according to elapsed time. */
-  protected _refill(): void {
-    const now = this._now();
-    const elapsedMs = Math.max(0, now - this._lastRefill);
-    if (elapsedMs === 0) return;
-
-    this._tokens = Math.min(this.capacity, this._tokens + (elapsedMs / 1000) * this.refillRate);
-    this._lastRefill = now;
-  }
-}
-
-/** HTTP rate limiting and retry options. */
-export interface RateLimitOptions extends TokenBucketRateLimiterOptions {
-  /** Existing limiter instance to share between transports. */
-  limiter?: TokenBucketRateLimiter;
-  /**
-   * Request weight charged for each HTTP call.
-   *
-   * Default: `1`
-   */
-  requestWeight?: number;
-  /**
-   * Maximum number of retries after HTTP 429 responses.
-   *
-   * Default: `3`
-   */
-  maxRetries?: number;
-  /**
-   * Initial exponential backoff delay in ms when no `Retry-After` header is provided.
-   *
-   * Default: `250`
-   */
-  initialBackoffMs?: number;
-  /**
-   * Maximum exponential backoff delay in ms.
-   *
-   * Default: `5_000`
-   */
-  maxBackoffMs?: number;
-}
+import * as abort from "../_abort.ts";
 
 /** Configuration options for the HTTP transport layer. */
 export interface HttpTransportOptions {
   /**
    * Indicates this transport uses testnet endpoint.
    *
-   * Default: false
+   * Default: `false`
    */
   isTestnet?: boolean;
   /**
@@ -155,25 +44,19 @@ export interface HttpTransportOptions {
    */
   timeout?: number | null;
   /**
-   * Custom API URL for requests.
+   * Custom API URL for `info` and `exchange` requests.
    *
    * Default: `https://api.hyperliquid.xyz` for mainnet, `https://api.hyperliquid-testnet.xyz` for testnet.
    */
   apiUrl?: string | URL;
   /**
-   * Custom RPC URL for explorer requests.
+   * Custom RPC URL for `explorer` requests.
    *
    * Default: `https://rpc.hyperliquid.xyz` for mainnet, `https://rpc.hyperliquid-testnet.xyz` for testnet.
    */
   rpcUrl?: string | URL;
   /** A custom {@link https://developer.mozilla.org/en-US/docs/Web/API/RequestInit | RequestInit} that is merged with a fetch request. */
   fetchOptions?: Omit<RequestInit, "body" | "method">;
-  /**
-   * Optional client-side rate limiting and 429 retry handling.
-   *
-   * Default: disabled.
-   */
-  rateLimit?: boolean | RateLimitOptions;
 }
 
 /** Mainnet API URL. */
@@ -185,45 +68,76 @@ export const MAINNET_RPC_URL = "https://rpc.hyperliquid.xyz";
 /** Testnet RPC URL. */
 export const TESTNET_RPC_URL = "https://rpc.hyperliquid-testnet.xyz";
 
-/** Error thrown when an HTTP request fails. */
+/**
+ * Error thrown when an HTTP request fails.
+ *
+ * @example
+ * ```ts
+ * import { HttpRequestError, HttpTransport } from "@nktkas/hyperliquid";
+ *
+ * const transport = new HttpTransport();
+ * try {
+ *   // Throws on a non-OK response, a timeout, an abort, or a network failure.
+ *   await transport.request("info", { type: "allMids" });
+ * } catch (error) {
+ *   if (error instanceof HttpRequestError) {
+ *     console.error(error.message, error.response?.status);
+ *   }
+ * }
+ * ```
+ */
 export class HttpRequestError extends TransportError {
   /** The HTTP response that caused the error. */
   response?: Response;
+  /** The original request payload that triggered the error, if available. */
+  request?: unknown;
 
   /**
-   * Creates a new HTTP request error.
+   * Creates an HTTP request error.
    *
-   * @param args The error arguments.
-   * @param args.response The HTTP response that caused the error.
-   * @param args.message Optional message to append after the status line.
-   * @param options The error options.
+   * The message is the response status line, extended with `detail` when given;
+   * without a response, `detail` alone or a description of `cause` is used.
    */
-  constructor(args?: { response?: Response; message?: string }, options?: ErrorOptions) {
-    const { response, message: detail } = args ?? {};
+  constructor(options?: ErrorOptions & { detail?: string; response?: Response; request?: unknown }) {
+    const { detail, response, request, ...errorOptions } = options ?? {};
 
     let message: string;
     if (response) {
       message = `${response.status} ${response.statusText}`.trim();
       if (detail) message += ` - ${detail}`;
+    } else if (detail) {
+      message = detail;
     } else {
-      message = `Unknown HTTP request error: ${options?.cause}`;
+      const cause = errorOptions.cause;
+      message = cause === undefined
+        ? "Unknown HTTP request error"
+        : `Unknown HTTP request error: ${cause instanceof Error ? cause.message : String(cause)}`;
     }
 
-    super(message, options);
+    super(message, errorOptions);
     this.name = "HttpRequestError";
     this.response = response;
+    this.request = request;
   }
 }
 
 /**
- * HTTP transport for Hyperliquid API.
+ * HTTP transport for the Hyperliquid API.
+ *
+ * @example
+ * ```ts
+ * import { HttpTransport } from "@nktkas/hyperliquid";
+ *
+ * const transport = new HttpTransport();
+ * const mids = await transport.request("info", { type: "allMids" });
+ * ```
  *
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint
  */
-export class HttpTransport implements IRequestTransport {
+export class HttpTransport implements IRequestTransport<"info" | "exchange" | "explorer"> {
   /** Indicates this transport uses testnet endpoint. */
-  isTestnet: boolean;
+  readonly isTestnet: boolean;
   /** Request timeout in ms. Set to `null` to disable. */
   timeout: number | null;
   /** Custom API URL for requests. */
@@ -233,186 +147,154 @@ export class HttpTransport implements IRequestTransport {
   /** A custom {@link https://developer.mozilla.org/en-US/docs/Web/API/RequestInit | RequestInit} that is merged with a fetch request. */
   fetchOptions: Omit<RequestInit, "body" | "method">;
 
-  protected readonly _rateLimit: NormalizedRateLimitOptions | undefined;
-
-  /**
-   * Creates a new HTTP transport instance.
-   *
-   * @param options Configuration options for the HTTP transport layer.
-   */
   constructor(options?: HttpTransportOptions) {
     this.isTestnet = options?.isTestnet ?? false;
     this.timeout = options?.timeout === undefined ? 10_000 : options.timeout;
     this.apiUrl = options?.apiUrl ?? (this.isTestnet ? TESTNET_API_URL : MAINNET_API_URL);
     this.rpcUrl = options?.rpcUrl ?? (this.isTestnet ? TESTNET_RPC_URL : MAINNET_RPC_URL);
     this.fetchOptions = options?.fetchOptions ?? {};
-    this._rateLimit = normalizeRateLimitOptions(options?.rateLimit);
   }
 
   /**
-   * Sends a request to the Hyperliquid API via {@link https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API | fetch}.
+   * Sends a request to the Hyperliquid API.
+   *
+   * Routes to {@linkcode apiUrl} for `info`/`exchange` and {@linkcode rpcUrl} for `explorer`.
    *
    * @param endpoint The API endpoint to send the request to.
    * @param payload The payload to send with the request.
    * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return A promise that resolves with parsed JSON response body.
+   * @return A promise that resolves with the parsed JSON response body.
    *
-   * @throws {HttpRequestError} Thrown when the HTTP request fails.
+   * @throws {HttpRequestError} When the HTTP request fails.
+   *
+   * @example
+   * ```ts
+   * import { HttpTransport } from "@nktkas/hyperliquid";
+   *
+   * const transport = new HttpTransport();
+   * const mids = await transport.request("info", { type: "allMids" });
+   * ```
    */
-  async request<T>(endpoint: "info" | "exchange" | "explorer", payload: unknown, signal?: AbortSignal): Promise<T> {
+  async request<T>(
+    endpoint: "info" | "exchange" | "explorer",
+    payload: unknown,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    // One controller per request: the timeout timer and all user signals relay into it,
+    // and `finally` detaches everything, so no listener or timer outlives the request.
+    const controller = new AbortController();
+    const timeoutMs = this.timeout; // for correct error message after user changes
+    const timeout = abort.scheduleTimeout(controller, timeoutMs);
+    const detachRelay = abort.relay([signal, this.fetchOptions.signal], controller);
+
     try {
-      // Construct a Request
-      const url = new URL(endpoint, endpoint === "explorer" ? this.rpcUrl : this.apiUrl);
-      const init = this._mergeRequestInit(
+      // --- Request init ------------------------------------------------------
+      const url = buildEndpointUrl(endpoint === "explorer" ? this.rpcUrl : this.apiUrl, endpoint);
+      const init = mergeRequestInit(
         {
           body: JSON.stringify(payload),
           headers: {
-            "Accept-Encoding": "gzip, deflate, br, zstd",
             "Content-Type": "application/json",
           },
-          keepalive: true,
           method: "POST",
-          signal: this.timeout ? AbortSignal_.timeout(this.timeout) : undefined,
         },
         this.fetchOptions,
-        { signal },
+        { signal: controller.signal },
       );
 
-      // Send the Request and wait for a Response
-      const response = await this._fetchWithRateLimit(url, init, init.signal);
-
-      // Validate the Response
+      // --- Send and validate -------------------------------------------------
+      const response = await fetch(url, init);
       if (!response.ok || !response.headers.get("Content-Type")?.includes("application/json")) {
         const clone = response.clone();
         const body = await response.text().catch(() => undefined); // releases connection, clone stays readable
-        throw new HttpRequestError({ response: clone, message: body });
+        throw new HttpRequestError({
+          response: clone,
+          detail: body ? truncate(body) : undefined,
+          request: payload,
+        });
       }
 
-      // Parse the response body
-      const clone = response.clone();
-      const body = await response.json();
-
-      // Check if the response is an error
-      if (body?.type === "error") {
-        throw new HttpRequestError({ response: clone, message: body?.message });
+      // --- Parse -------------------------------------------------------------
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        throw new HttpRequestError({
+          response: recreateResponse(response, text),
+          detail: "Invalid JSON response body",
+          cause: error,
+          request: payload,
+        });
       }
-
-      // Return the response body
-      return body;
     } catch (error) {
-      if (error instanceof TransportError) throw error; // Re-throw known errors
-      throw new HttpRequestError(undefined, { cause: error });
-    }
-  }
-
-  /** Sends a fetch request with optional token-bucket throttling and 429 retry handling. */
-  protected async _fetchWithRateLimit(
-    url: URL,
-    init: RequestInit,
-    signal?: AbortSignal | null,
-  ): Promise<Response> {
-    const rateLimit = this._rateLimit;
-    if (!rateLimit) return await fetch(url, init);
-
-    let attempt = 0;
-    while (true) {
-      await rateLimit.limiter.waitForToken(rateLimit.requestWeight, signal ?? undefined);
-      const response = await fetch(url, init);
-      if (response.status !== 429 || attempt >= rateLimit.maxRetries) return response;
-
-      await response.text().catch(() => undefined); // release connection before retrying
-      const delay = getRetryDelay(response, attempt, rateLimit);
-      await rateLimit.sleep(delay, signal ?? undefined);
-      attempt++;
-    }
-  }
-
-  /** Merges multiple `HeadersInit` into one {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/Headers | Headers}. */
-  protected _mergeHeadersInit(...inits: HeadersInit[]): Headers {
-    const merged = new Headers();
-    for (const headers of inits) {
-      const entries = Symbol.iterator in headers ? headers : Object.entries(headers);
-      for (const [key, value] of entries) {
-        merged.set(key, value);
+      if (error instanceof TransportError) throw error;
+      if (error === timeout.reason) {
+        throw new HttpRequestError({
+          detail: `Request timed out after ${timeoutMs} ms`,
+          cause: error,
+          request: payload,
+        });
       }
+      if (controller.signal.aborted && error === controller.signal.reason) {
+        throw new HttpRequestError({ detail: "Request aborted", cause: error, request: payload });
+      }
+      throw new HttpRequestError({ cause: error, request: payload });
+    } finally {
+      timeout.cancel();
+      detachRelay();
     }
-    return merged;
-  }
-
-  /** Merges multiple {@link https://developer.mozilla.org/en-US/docs/Web/API/RequestInit | RequestInit} into one {@link https://developer.mozilla.org/en-US/docs/Web/API/RequestInit | RequestInit}. */
-  protected _mergeRequestInit(...inits: RequestInit[]): RequestInit {
-    const merged: RequestInit = {};
-    const headersList: HeadersInit[] = [];
-    const signals: AbortSignal[] = [];
-
-    for (const init of inits) {
-      Object.assign(merged, init);
-      if (init.headers) headersList.push(init.headers);
-      if (init.signal) signals.push(init.signal);
-    }
-    if (headersList.length > 0) merged.headers = this._mergeHeadersInit(...headersList);
-    if (signals.length > 0) merged.signal = signals.length > 1 ? AbortSignal_.any(signals) : signals[0];
-
-    return merged;
   }
 }
 
-interface NormalizedRateLimitOptions {
-  limiter: TokenBucketRateLimiter;
-  requestWeight: number;
-  maxRetries: number;
-  initialBackoffMs: number;
-  maxBackoffMs: number;
-  sleep: SleepFn;
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/** Truncates `text` to `limit` characters, appending the original length. */
+function truncate(text: string, limit = 1024): string {
+  if (text.length <= limit) return text;
+  return `${text.slice(0, limit)}… (${text.length} chars total)`;
 }
 
-function normalizeRateLimitOptions(
-  value: boolean | RateLimitOptions | undefined,
-): NormalizedRateLimitOptions | undefined {
-  if (!value) return undefined;
-
-  const options = value === true ? {} : value;
-  return {
-    limiter: options.limiter ?? new TokenBucketRateLimiter(options),
-    requestWeight: options.requestWeight ?? 1,
-    maxRetries: options.maxRetries ?? 3,
-    initialBackoffMs: options.initialBackoffMs ?? 250,
-    maxBackoffMs: options.maxBackoffMs ?? 5_000,
-    sleep: options.sleep ?? sleep,
-  };
+/** Resolves an endpoint against a base URL without dropping the base path or query. */
+function buildEndpointUrl(base: string | URL, endpoint: string): URL {
+  const baseUrl = new URL(base);
+  if (!baseUrl.pathname.endsWith("/")) baseUrl.pathname += "/";
+  const url = new URL(endpoint, baseUrl);
+  url.search = baseUrl.search; // relative resolution drops the base query
+  return url;
 }
 
-function getRetryDelay(response: Response, attempt: number, options: NormalizedRateLimitOptions): number {
-  const retryAfter = response.headers.get("Retry-After");
-  const retryAfterMs = retryAfter ? parseRetryAfter(retryAfter) : undefined;
-  if (retryAfterMs !== undefined) return retryAfterMs;
-
-  return Math.min(options.initialBackoffMs * 2 ** attempt, options.maxBackoffMs);
-}
-
-function parseRetryAfter(value: string): number | undefined {
-  const seconds = Number(value);
-  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
-
-  const dateMs = Date.parse(value);
-  if (Number.isFinite(dateMs)) return Math.max(0, dateMs - Date.now());
-
-  return undefined;
-}
-
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason);
-
-    const onAbort = () => {
-      clearTimeout(timer);
-      reject(signal?.reason);
-    };
-    const timer = setTimeout(() => {
-      signal?.removeEventListener("abort", onAbort);
-      resolve();
-    }, ms);
-
-    signal?.addEventListener("abort", onAbort, { once: true });
+/** Rebuilds a response whose body has already been consumed, so `error.response` stays readable. */
+function recreateResponse(original: Response, text: string): Response {
+  return new Response(text || null, {
+    status: original.status,
+    statusText: original.statusText,
+    headers: original.headers,
   });
+}
+
+/** Merges headers inits left to right: a later occurrence of a key overwrites the earlier one. */
+function mergeHeadersInit(...inits: HeadersInit[]): Headers {
+  const merged = new Headers();
+  for (const init of inits) {
+    for (const [key, value] of new Headers(init)) {
+      merged.set(key, value);
+    }
+  }
+  return merged;
+}
+
+/** Merges request inits left to right: `headers` are combined, every other field is last-init-wins. */
+function mergeRequestInit(...inits: RequestInit[]): RequestInit {
+  const merged: RequestInit = {};
+  const headersList: HeadersInit[] = [];
+
+  for (const init of inits) {
+    Object.assign(merged, init);
+    if (init.headers) headersList.push(init.headers);
+  }
+  if (headersList.length > 0) merged.headers = mergeHeadersInit(...headersList);
+
+  return merged;
 }

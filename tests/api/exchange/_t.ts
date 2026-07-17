@@ -17,6 +17,7 @@ import { generatePrivateKey, privateKeyToAccount } from "npm:viem@2/accounts";
 // ============================================================
 
 const WAIT = 5000;
+const OFFLINE = Deno.args.includes("--offline");
 
 const PRIVATE_KEY = Deno.env.get("PRIVATE_KEY") as `0x${string}` | undefined;
 const MAIN_WALLET = PRIVATE_KEY ? privateKeyToAccount(PRIVATE_KEY) : undefined;
@@ -28,8 +29,13 @@ const MAIN_WALLET = PRIVATE_KEY ? privateKeyToAccount(PRIVATE_KEY) : undefined;
 const transport = new HttpTransport({ isTestnet: true, timeout: 30_000 });
 const infoClient = new InfoClient({ transport });
 
-export const symbolConverter = await SymbolConverter.create({ transport });
-export const allMids = await infoClient.allMids();
+// These are only consumed by network tests, which are skipped via `ignore: OFFLINE`, so the unused values are safe.
+export const symbolConverter = OFFLINE
+  ? undefined as unknown as SymbolConverter
+  : await SymbolConverter.create({ transport });
+export const allMids = OFFLINE
+  ? undefined as unknown as Awaited<ReturnType<typeof infoClient.allMids>>
+  : await infoClient.allMids();
 
 // ============================================================
 // Test
@@ -47,7 +53,7 @@ export function runTest(options: {
 
   const clientTypes = skipMultiSig ? ["user"] as const : ["user", "multisig"] as const;
 
-  Deno.test(name, { ignore: !MAIN_WALLET }, async (t) => {
+  Deno.test(name, { ignore: OFFLINE || !MAIN_WALLET }, async (t) => {
     await new Promise((r) => setTimeout(r, WAIT)); // delay to avoid rate limits
 
     for (const clientType of clientTypes) {
@@ -171,7 +177,7 @@ export async function openOrder(
   midPx: string;
 }> {
   // Top-up account
-  await topUpPerp(client, "13");
+  await topUpPerp(client, "20");
 
   // Get market data
   const id = symbolConverter.getAssetId(symbol)!;
@@ -181,7 +187,7 @@ export async function openOrder(
   // Calculate order parameters
   const pxDown = formatPrice(Number(midPx) * (1 - slippage), szDecimals);
   const pxUp = formatPrice(Number(midPx) * (1 + slippage), szDecimals);
-  const sz = formatSize(11 / Number(midPx), szDecimals);
+  const sz = formatSize(15 / Number(midPx), szDecimals);
 
   let executionPx: string;
   if (type === "market") {
@@ -292,4 +298,20 @@ export async function topUpSpot(
     token: `${token}:${tokenAddresses[token]}`,
     amount,
   });
+}
+
+export async function createAgentExchangeClient(
+  principalClient: ExchangeClient<ExchangeSingleWalletConfig | ExchangeMultiSigConfig>,
+): Promise<{ agentExch: ExchangeClient<ExchangeSingleWalletConfig>; principal: `0x${string}` }> {
+  const principal = "multiSigUser" in principalClient.config_
+    ? principalClient.config_.multiSigUser
+    : await getWalletAddress(principalClient.config_.wallet);
+
+  const agentAccount = privateKeyToAccount(generatePrivateKey());
+  await principalClient.approveAgent({ agentAddress: agentAccount.address, agentName: null });
+
+  return {
+    agentExch: new ExchangeClient({ wallet: agentAccount, transport }),
+    principal,
+  };
 }

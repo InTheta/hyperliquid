@@ -14,7 +14,7 @@ import {
   spotMetaAndAssetCtxs,
   type SpotMetaAndAssetCtxsResponse,
 } from "../api/info/mod.ts";
-import type { PerpAssetCtxSchema } from "../api/info/_methods/_base/commonSchemas.ts";
+import type { PerpAssetCtx } from "../api/info/_methods/_base/mod.ts";
 import type { ClearinghouseStateResponse } from "../api/info/_methods/clearinghouseState.ts";
 import {
   allDexsAssetCtxs,
@@ -801,7 +801,7 @@ export class HyperliquidMarketCache {
 
   /** Apply a live all-DEX asset context event to known perp records. */
   applyAllDexsAssetCtxs(event: AllDexsAssetCtxsEvent | unknown): void {
-    const entries = normalizeDexEntries<PerpAssetCtxSchema[] | Record<string, unknown>[]>(
+    const entries = normalizeDexEntries<PerpAssetCtx[] | Record<string, unknown>[]>(
       event,
       "ctxs",
     );

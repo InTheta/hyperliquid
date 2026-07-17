@@ -28,15 +28,14 @@ export type UserAbstractionResponse =
   | "unifiedAccount"
   | "portfolioMargin"
   | "disabled"
-  | "default"
-  | "dexAbstraction";
+  | "default";
 
 // ============================================================
 // Execution Logic
 // ============================================================
 
 import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/types.ts";
+import type { InfoConfig } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode userAbstraction} function. */
 export type UserAbstractionParameters = Omit<v.InferInput<typeof UserAbstractionRequest>, "type">;

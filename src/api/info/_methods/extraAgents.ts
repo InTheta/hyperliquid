@@ -32,8 +32,8 @@ export type ExtraAgentsResponse = {
   address: `0x${string}`;
   /** Extra agent name. */
   name: string;
-  /** Validity period as a timestamp (in ms since epoch). */
-  validUntil: number;
+  /** Validity period as a timestamp (in ms since epoch); `null` when the agent has no expiry. */
+  validUntil: number | null;
 }[];
 
 // ============================================================
@@ -41,7 +41,7 @@ export type ExtraAgentsResponse = {
 // ============================================================
 
 import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/types.ts";
+import type { InfoConfig } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode extraAgents} function. */
 export type ExtraAgentsParameters = Omit<v.InferInput<typeof ExtraAgentsRequest>, "type">;

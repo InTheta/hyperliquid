@@ -67,6 +67,20 @@ runTest({
         },
       },
       {
+        registerAsset2: {
+          maxGas: null,
+          assetRequest: {
+            coin: "4",
+            szDecimals: 1,
+            oraclePx: "1",
+            marginTableId: 1,
+            marginMode: "normal",
+          },
+          dex: "test",
+          schema: null,
+        },
+      },
+      {
         registerAsset: {
           maxGas: 1000000000000,
           assetRequest: {
@@ -129,6 +143,18 @@ runTest({
       { haltTrading: { coin: "TEST0", isHalted: true } },
       { setMarginTableIds: [["TEST0", 1]] },
       {
+        insertMarginTable: {
+          dex: "test",
+          marginTable: {
+            description: "test",
+            marginTiers: [
+              { lowerBound: 0, maxLeverage: 50 },
+              { lowerBound: 1000000, maxLeverage: 10 },
+            ],
+          },
+        },
+      },
+      {
         setFeeRecipient: {
           dex: "test",
           feeRecipient: "0x0000000000000000000000000000000000000000",
@@ -166,6 +192,7 @@ runTest({
           keywords: ["perp", "other"],
         },
       },
+      { disableDex: "test" },
     ];
 
     await Promise.all(params.map((p) =>

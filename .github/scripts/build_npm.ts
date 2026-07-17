@@ -104,7 +104,7 @@ try {
       },
     },
     compilerOptions: {
-      lib: ["ESNext", "DOM"],
+      lib: ["ESNext", "DOM", "DOM.Iterable"],
       target: "Latest",
       sourceMap: true,
     },

@@ -1,0 +1,345 @@
+// deno-lint-ignore-file no-import-prefix
+
+/**
+ * Tests for HttpTransport against a mocked global fetch: URL routing,
+ * error wrapping, fetch options merging, and abort/timeout handling.
+ * @module
+ */
+
+import { getEventListeners } from "node:events";
+import { assert, assertEquals, assertIsError, assertRejects } from "jsr:@std/assert@1";
+import { HttpRequestError, HttpTransport } from "@nktkas/hyperliquid";
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/** One-time mock for global fetch. */
+function mockFetch(handler: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>): void {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (...args) => {
+    try {
+      return await handler(...args);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  };
+}
+
+/** Returns a successful JSON response. */
+function jsonResponse(body: unknown = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// =============================================================================
+// Test Data
+// =============================================================================
+
+const ENDPOINTS = ["info", "exchange", "explorer"] as const;
+
+const URL_EXPECTATIONS = {
+  mainnet: {
+    info: "https://api.hyperliquid.xyz/info",
+    exchange: "https://api.hyperliquid.xyz/exchange",
+    explorer: "https://rpc.hyperliquid.xyz/explorer",
+  },
+  testnet: {
+    info: "https://api.hyperliquid-testnet.xyz/info",
+    exchange: "https://api.hyperliquid-testnet.xyz/exchange",
+    explorer: "https://rpc.hyperliquid-testnet.xyz/explorer",
+  },
+} as const;
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+Deno.test("HttpTransport", async (t) => {
+  await t.step("URL routing", async (t) => {
+    await t.step("mainnet (default)", async (t) => {
+      const transport = new HttpTransport();
+
+      for (const endpoint of ENDPOINTS) {
+        await t.step(`${endpoint}`, async () => {
+          mockFetch((req) => {
+            assertEquals(new Request(req).url, URL_EXPECTATIONS.mainnet[endpoint]);
+            return jsonResponse();
+          });
+          await transport.request(endpoint, {});
+        });
+      }
+    });
+
+    await t.step("testnet (isTestnet: true)", async (t) => {
+      const transport = new HttpTransport({ isTestnet: true });
+
+      for (const endpoint of ENDPOINTS) {
+        await t.step(`${endpoint}`, async () => {
+          mockFetch((req) => {
+            assertEquals(new Request(req).url, URL_EXPECTATIONS.testnet[endpoint]);
+            return jsonResponse();
+          });
+          await transport.request(endpoint, {});
+        });
+      }
+    });
+
+    await t.step("custom URLs", async () => {
+      const transport = new HttpTransport({
+        apiUrl: "https://custom-api.example.com",
+        rpcUrl: "https://custom-rpc.example.com",
+      });
+
+      mockFetch((req) => {
+        assertEquals(new Request(req).url, "https://custom-api.example.com/info");
+        return jsonResponse();
+      });
+      await transport.request("info", {});
+
+      mockFetch((req) => {
+        assertEquals(new Request(req).url, "https://custom-rpc.example.com/explorer");
+        return jsonResponse();
+      });
+      await transport.request("explorer", {});
+    });
+
+    await t.step("custom URL with path and query keeps both", async () => {
+      const transport = new HttpTransport({ apiUrl: "https://proxy.example.com/hl?key=secret" });
+
+      mockFetch((req) => {
+        assertEquals(new Request(req).url, "https://proxy.example.com/hl/info?key=secret");
+        return jsonResponse();
+      });
+      await transport.request("info", {});
+    });
+  });
+
+  await t.step("request()", async (t) => {
+    await t.step("success response", async () => {
+      mockFetch((_req, init) => {
+        assertEquals(init?.method, "POST");
+        assertEquals(new Headers(init?.headers).get("Content-Type"), "application/json");
+        return jsonResponse({ data: "test" });
+      });
+
+      const transport = new HttpTransport();
+      const result = await transport.request("info", {});
+      assertEquals(result, { data: "test" });
+    });
+
+    await t.step("error responses", async (t) => {
+      await t.step("non-200 status throws HttpRequestError", async () => {
+        mockFetch(() => new Response("", { status: 500 }));
+
+        const transport = new HttpTransport();
+        await assertRejects(() => transport.request("info", {}), HttpRequestError);
+      });
+
+      await t.step("invalid Content-Type throws HttpRequestError", async () => {
+        mockFetch(() => new Response("", { status: 200, headers: { "Content-Type": "text/html" } }));
+
+        const transport = new HttpTransport();
+        await assertRejects(() => transport.request("info", {}), HttpRequestError);
+      });
+
+      await t.step("invalid JSON in 2xx response throws HttpRequestError with readable response", async () => {
+        mockFetch(() => new Response("not json", { status: 200, headers: { "Content-Type": "application/json" } }));
+
+        const transport = new HttpTransport();
+        const error = await assertRejects(() => transport.request("info", {}), HttpRequestError, "Invalid JSON");
+        assert(error.response);
+        assertEquals(await error.response.text(), "not json");
+      });
+
+      await t.step("error message truncates large response bodies", async () => {
+        mockFetch(() => new Response("x".repeat(5000), { status: 500 }));
+
+        const transport = new HttpTransport();
+        const error = await assertRejects(() => transport.request("info", {}), HttpRequestError);
+        assert(error.message.includes("(5000 chars total)"));
+        assert(error.message.length < 1200);
+        assertEquals(await error.response?.text(), "x".repeat(5000)); // full body stays readable
+      });
+
+      await t.step("error carries the original request payload", async () => {
+        mockFetch(() => new Response("", { status: 500 }));
+
+        const transport = new HttpTransport();
+        const error = await assertRejects(() => transport.request("info", { type: "test" }), HttpRequestError);
+        assertEquals(error.request, { type: "test" });
+      });
+
+      await t.step("response body is readable on error", async () => {
+        mockFetch(() => new Response("error body", { status: 500 }));
+
+        const transport = new HttpTransport();
+        const error = await assertRejects(() => transport.request("info", {}), HttpRequestError);
+        assert(error.response);
+        assertEquals(error.response.bodyUsed, false);
+        assertEquals(await error.response.text(), "error body");
+      });
+
+      await t.step("unknown error wraps in HttpRequestError", async () => {
+        mockFetch(() => {
+          throw new Error("network error");
+        });
+
+        const transport = new HttpTransport();
+        const error = await assertRejects(() => transport.request("info", {}), HttpRequestError);
+        assertIsError(error.cause, Error, "network error");
+      });
+    });
+  });
+
+  await t.step("fetchOptions", async (t) => {
+    await t.step("headers as object", async () => {
+      mockFetch((_req, init) => {
+        const headers = new Headers(init?.headers);
+        assertEquals(headers.get("Content-Type"), "application/json");
+        assertEquals(headers.get("X-Custom"), "value");
+        return jsonResponse();
+      });
+
+      const transport = new HttpTransport({
+        fetchOptions: { headers: { "X-Custom": "value" } },
+      });
+      await transport.request("info", {});
+    });
+
+    await t.step("headers as Headers instance", async () => {
+      mockFetch((_req, init) => {
+        const headers = new Headers(init?.headers);
+        assertEquals(headers.get("Content-Type"), "application/json");
+        assertEquals(headers.get("X-Custom"), "value");
+        return jsonResponse();
+      });
+
+      const transport = new HttpTransport({
+        fetchOptions: { headers: new Headers({ "X-Custom": "value" }) },
+      });
+      await transport.request("info", {});
+    });
+
+    await t.step("headers as array joins duplicate keys", async () => {
+      mockFetch((_req, init) => {
+        assertEquals(new Headers(init?.headers).get("X-Multi"), "a, b");
+        return jsonResponse();
+      });
+
+      const transport = new HttpTransport({
+        fetchOptions: { headers: [["X-Multi", "a"], ["X-Multi", "b"]] },
+      });
+      await transport.request("info", {});
+    });
+  });
+
+  await t.step("AbortSignal", async (t) => {
+    await t.step("internal timeout triggers TimeoutError", async () => {
+      mockFetch((_req, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+      );
+
+      const transport = new HttpTransport({ timeout: 1 });
+
+      const error = await assertRejects(() => transport.request("info", {}), HttpRequestError, "Request timed out");
+      assertIsError(error.cause, DOMException);
+      assertEquals(error.cause.name, "TimeoutError");
+    });
+
+    await t.step("user signal is respected", async () => {
+      class CustomAbortError extends Error {}
+
+      const transport = new HttpTransport();
+      const signal = AbortSignal.abort(new CustomAbortError("user abort"));
+
+      const error = await assertRejects(() => transport.request("info", {}, signal), HttpRequestError);
+      assertIsError(error.cause, CustomAbortError);
+    });
+
+    await t.step("in-flight abort rejects with 'Request aborted'", async () => {
+      mockFetch((_req, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+      );
+
+      const controller = new AbortController();
+      const transport = new HttpTransport();
+      const promise = transport.request("info", {}, controller.signal);
+      controller.abort(new DOMException("user cancel", "AbortError"));
+
+      const error = await assertRejects(() => promise, HttpRequestError, "Request aborted");
+      assertIsError(error.cause, DOMException);
+      assertEquals(error.cause.name, "AbortError");
+    });
+
+    await t.step("timeout: 0 aborts immediately with TimeoutError", async () => {
+      mockFetch((_req, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+      );
+
+      const transport = new HttpTransport({ timeout: 0 });
+      const error = await assertRejects(() => transport.request("info", {}), HttpRequestError, "Request timed out");
+      assertIsError(error.cause, DOMException);
+      assertEquals(error.cause.name, "TimeoutError");
+    });
+
+    await t.step("timeout: null disables internal timeout", async () => {
+      mockFetch(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return jsonResponse();
+      });
+
+      const transport = new HttpTransport({ timeout: null });
+      await transport.request("info", {});
+    });
+
+    await t.step("the timeout message reports the value the timer was armed with", async () => {
+      mockFetch((_req, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+      );
+
+      const transport = new HttpTransport({ timeout: 30 });
+      const promise = transport.request("info", {});
+      transport.timeout = null;
+
+      await assertRejects(() => promise, HttpRequestError, "Request timed out after 30 ms");
+    });
+
+    await t.step("fetchOptions.signal is respected", async () => {
+      mockFetch((_req, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+      );
+
+      const controller = new AbortController();
+      const transport = new HttpTransport({ fetchOptions: { signal: controller.signal } });
+      const promise = transport.request("info", {});
+      controller.abort(new DOMException("user cancel", "AbortError"));
+
+      const error = await assertRejects(() => promise, HttpRequestError, "Request aborted");
+      assertIsError(error.cause, DOMException);
+    });
+
+    await t.step("does not leak abort listeners on a long-lived user signal", async () => {
+      const controller = new AbortController();
+      const transport = new HttpTransport();
+      for (let i = 0; i < 100; i++) {
+        mockFetch(() => jsonResponse());
+        await transport.request("info", {}, controller.signal);
+      }
+
+      assertEquals(getEventListeners(controller.signal, "abort").length, 0);
+    });
+  });
+});

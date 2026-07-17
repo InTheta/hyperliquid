@@ -18,13 +18,21 @@ major JS runtimes, written in TypeScript.
 - 🔧 **Integratable**: Easy to use with wallet providers ([viem](https://github.com/wevm/viem) or
   [ethers](https://github.com/ethers-io/ethers.js)).
 
-## Installation (choose your package manager)
+## Installation
 
+```sh
+# Node.js 22.12+ / React Native 0.86+
+npm i @nktkas/hyperliquid
+
+# Deno 1.23+ 
+deno add jsr:@nktkas/hyperliquid
+
+# Bun 1.3.3+
+bun add @nktkas/hyperliquid
 ```
-npm i @nktkas/hyperliquid        # npm / pnpm / yarn
-deno add jsr:@nktkas/hyperliquid # Deno
-bun add @nktkas/hyperliquid      # Bun
-```
+
+> React Native needs polyfills for the `fastAssetCtxs` subscription and for versions below 0.86 — see the
+> [documentation](https://nktkas.gitbook.io/hyperliquid).
 
 ## Quick Example
 
@@ -117,6 +125,16 @@ await subs.l2Book({ coin: "ETH" }, (data) => {
 
 Full guides, examples, and API reference: [nktkas.gitbook.io/hyperliquid](https://nktkas.gitbook.io/hyperliquid)
 
+## Versioning
+
+This SDK follows [Semantic Versioning](https://semver.org/). Until `1.0.0`, breaking changes bump the minor version and
+everything else bumps the patch — the [caret-range](https://github.com/npm/node-semver#caret-ranges-123-025-004)
+convention.
+
+The exception is the request, response, and event types that mirror the Hyperliquid API. The API is unversioned and
+always serves its latest shape, so changes to these types ship in **patch** releases even when breaking — the break
+comes from Hyperliquid, not the SDK.
+
 ## Star History
 
 <a href="https://www.star-history.com/#nktkas/hyperliquid&type=date&legend=top-left">
@@ -126,3 +144,10 @@ Full guides, examples, and API reference: [nktkas.gitbook.io/hyperliquid](https:
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=nktkas/hyperliquid&type=date&legend=top-left" />
  </picture>
 </a>
+
+## License
+
+**@nktkas/hyperliquid** is licensed under the [MIT License](LICENSE).
+
+Copyright © 2024-present [nktkas](https://github.com/nktkas) and
+[contributors](https://github.com/nktkas/hyperliquid/graphs/contributors).

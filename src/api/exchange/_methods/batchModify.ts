@@ -35,7 +35,7 @@ export const BatchModifyRequest = /* @__PURE__ */ (() => {
             ),
             /** Size (in base currency units). */
             s: UnsignedDecimal,
-            /** Is reduce-only? */
+            /** Whether the order is reduce-only. */
             r: v.boolean(),
             /** Order type (`limit` for limit orders, `trigger` for stop-loss/take-profit orders). */
             t: v.union([
@@ -55,7 +55,7 @@ export const BatchModifyRequest = /* @__PURE__ */ (() => {
               v.object({
                 /** Trigger order parameters. */
                 trigger: v.object({
-                  /** Is market order? */
+                  /** Whether the order is a market order. */
                   isMarket: v.boolean(),
                   /** Trigger price. */
                   triggerPx: v.pipe(
@@ -72,6 +72,13 @@ export const BatchModifyRequest = /* @__PURE__ */ (() => {
           }),
         }),
       ),
+      /**
+       * Always place the resulting orders, even if the cancels did not succeed.
+       *
+       * Omit the field otherwise; the default behavior requires each new order to be a non-trigger order with TIF
+       * `Alo`, or a non-executable order with TIF `Gtc`.
+       */
+      a: v.optional(v.literal(true)),
     }),
     /** Nonce (timestamp in ms) used to prevent replay attacks. */
     nonce: UnsignedInteger,
@@ -104,8 +111,12 @@ export type BatchModifyResponse = OrderResponse;
 
 import { parse } from "../../../_base.ts";
 import { canonicalize } from "../../../signing/mod.ts";
-import type { ExcludeErrorResponse } from "./_base/errors.ts";
-import { type ExchangeConfig, executeL1Action, type ExtractRequestOptions } from "./_base/execute.ts";
+import {
+  type ExchangeConfig,
+  type ExcludeErrorResponse,
+  executeL1Action,
+  type ExtractRequestOptions,
+} from "./_base/mod.ts";
 
 /** Schema for action fields (excludes request-level system fields). */
 const BatchModifyActionSchema = /* @__PURE__ */ (() => {

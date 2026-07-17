@@ -8,7 +8,7 @@ import { Address, UnsignedInteger } from "../../_schemas.ts";
 
 /**
  * Request user borrow/lend interest.
- * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-borrow-lend-user-state
+ * @see null
  */
 export const UserBorrowLendInterestRequest = /* @__PURE__ */ (() => {
   return v.object({
@@ -26,12 +26,12 @@ export type UserBorrowLendInterestRequest = v.InferOutput<typeof UserBorrowLendI
 
 /**
  * User's borrow/lend interest.
- * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-borrow-lend-user-state
+ * @see null
  */
 export type UserBorrowLendInterestResponse = {
   /** Timestamp of the update (in ms since epoch). */
   time: number;
-  /** Token symbol. */
+  /** Token symbol (e.g., USDC). */
   token: string;
   /**
    * Borrow interest amount.
@@ -50,7 +50,7 @@ export type UserBorrowLendInterestResponse = {
 // ============================================================
 
 import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/types.ts";
+import type { InfoConfig } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode userBorrowLendInterest} function. */
 export type UserBorrowLendInterestParameters = Omit<v.InferInput<typeof UserBorrowLendInterestRequest>, "type">;
@@ -79,7 +79,7 @@ export type UserBorrowLendInterestParameters = Omit<v.InferInput<typeof UserBorr
  * });
  * ```
  *
- * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-borrow-lend-user-state
+ * @see null
  */
 export function userBorrowLendInterest(
   config: InfoConfig,

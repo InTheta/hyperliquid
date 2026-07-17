@@ -37,7 +37,7 @@ export type AllMidsEvent = {
 
 import { parse } from "../../../_base.ts";
 import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig } from "./_types.ts";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode allMids} function. */
 export type AllMidsParameters = Omit<v.InferInput<typeof AllMidsRequest>, "type">;
@@ -48,6 +48,7 @@ export type AllMidsParameters = Omit<v.InferInput<typeof AllMidsRequest>, "type"
  * @param config General configuration for Subscription API subscriptions.
  * @param params Parameters specific to the API subscription.
  * @param listener A callback function to be called when the event is received.
+ * @param options Options to control the subscription lifecycle.
  * @return A request-promise that resolves with a {@link ISubscription} object to manage the subscription lifecycle.
  *
  * @throws {ValidationError} When the request parameters fail validation (before sending).
@@ -71,19 +72,24 @@ export type AllMidsParameters = Omit<v.InferInput<typeof AllMidsRequest>, "type"
 export function allMids(
   config: SubscriptionConfig,
   listener: (data: AllMidsEvent) => void,
+  options?: SubscriptionOptions,
 ): Promise<ISubscription>;
 export function allMids(
   config: SubscriptionConfig,
   params: AllMidsParameters,
   listener: (data: AllMidsEvent) => void,
+  options?: SubscriptionOptions,
 ): Promise<ISubscription>;
 export function allMids(
   config: SubscriptionConfig,
   paramsOrListener: AllMidsParameters | ((data: AllMidsEvent) => void),
-  maybeListener?: (data: AllMidsEvent) => void,
+  listenerOrOptions?: ((data: AllMidsEvent) => void) | SubscriptionOptions,
+  maybeOptions?: SubscriptionOptions,
 ): Promise<ISubscription> {
-  const params = typeof paramsOrListener === "function" ? {} : paramsOrListener;
-  const listener = typeof paramsOrListener === "function" ? paramsOrListener : maybeListener!;
+  const isListenerFirst = typeof paramsOrListener === "function";
+  const params = isListenerFirst ? {} : paramsOrListener;
+  const listener = isListenerFirst ? paramsOrListener : listenerOrOptions as (data: AllMidsEvent) => void;
+  const options = isListenerFirst ? listenerOrOptions as SubscriptionOptions | undefined : maybeOptions;
 
   const payload = parse(AllMidsRequest, {
     type: "allMids",
@@ -91,9 +97,11 @@ export function allMids(
     dex: params.dex || undefined, // Same value as in response
   });
   return config.transport.subscribe<AllMidsEvent>(payload.type, payload, (e) => {
-    const detailDex = e.detail.dex || undefined;
-    if (detailDex === payload.dex) {
+    // The API uses both an omitted DEX and an empty string for the main DEX.
+    // Normalize both forms so the default subscription cannot silently stop
+    // delivering updates after a reconnect.
+    if ((e.detail.dex || undefined) === payload.dex) {
       listener(e.detail);
     }
-  });
+  }, options);
 }

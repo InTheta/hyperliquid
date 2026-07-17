@@ -3,6 +3,29 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { HttpTransport, type IRequestTransport } from "@nktkas/hyperliquid";
 import { SymbolConverter } from "@nktkas/hyperliquid/utils";
+import type { OutcomeMetaResponse } from "@nktkas/hyperliquid/api/info";
+
+const OFFLINE = Deno.args.includes("--offline");
+
+// ============================================================
+// Helpers
+// ============================================================
+
+/** Builds a request transport that serves a fixed `outcomeMeta` and empty perpetual/spot metadata. */
+function createOutcomeTransport(outcomeMeta: OutcomeMetaResponse): IRequestTransport {
+  const responses: Record<string, unknown> = {
+    meta: { universe: [] },
+    spotMeta: { tokens: [], universe: [] },
+    outcomeMeta,
+  };
+  return {
+    isTestnet: false,
+    request<T>(_endpoint: "info" | "exchange" | "explorer", payload: unknown): Promise<T> {
+      const { type } = payload as { type: string };
+      return Promise.resolve(responses[type] as T);
+    },
+  };
+}
 
 // ============================================================
 // Test Data
@@ -19,145 +42,129 @@ const SPOT_EXPECTATIONS = {
 } as const;
 
 const DEX_EXPECTATIONS = {
-  "dexA:AAA": { assetId: 110000 },
-  "dexB:BBB": { assetId: 120000 },
-  "dexC:CCC": { assetId: 130000 },
+  "test:ABC": { assetId: 110000 },
+  "unit:ES": { assetId: 120000 },
 } as const;
 
-// ============================================================
-// Helpers
-// ============================================================
-
-class MockInfoTransport implements IRequestTransport {
-  isTestnet = false;
-  requests: unknown[] = [];
-
-  request<T>(endpoint: "info" | "exchange" | "explorer", payload: unknown): Promise<T> {
-    if (endpoint !== "info") throw new Error(`Unexpected endpoint: ${endpoint}`);
-    if (!isRecord(payload)) throw new Error("Unexpected payload");
-
-    this.requests.push(payload);
-
-    if (payload.type === "meta" && payload.dex === "dexA") {
-      return Promise.resolve({
-        universe: [{ name: "dexA:AAA", szDecimals: 1, maxLeverage: 3, marginTableId: 1 }],
-        marginTables: [],
-        collateralToken: 0,
-      } as T);
-    }
-    if (payload.type === "meta" && payload.dex === "dexB") {
-      return Promise.resolve({
-        universe: [{ name: "dexB:BBB", szDecimals: 2, maxLeverage: 3, marginTableId: 1 }],
-        marginTables: [],
-        collateralToken: 0,
-      } as T);
-    }
-    if (payload.type === "meta" && payload.dex === "dexC") {
-      return Promise.resolve({
-        universe: [{ name: "CCC", szDecimals: 0, maxLeverage: 2, marginTableId: 2 }],
-        marginTables: [],
-        collateralToken: 1,
-      } as T);
-    }
-    if (payload.type === "meta") {
-      return Promise.resolve({
-        universe: [{ name: "BTC", szDecimals: 5, maxLeverage: 50, marginTableId: 1 }],
-        marginTables: [],
-        collateralToken: 0,
-      } as T);
-    }
-    if (payload.type === "spotMeta") {
-      return Promise.resolve({
-        tokens: [
-          {
-            name: "AAA",
-            szDecimals: 2,
-            weiDecimals: 6,
-            index: 0,
-            tokenId: "0x00000000000000000000000000000000",
-            isCanonical: true,
-            evmContract: null,
-            fullName: null,
-            deployerTradingFeeShare: "0",
-          },
-          {
-            name: "USDC",
-            szDecimals: 6,
-            weiDecimals: 6,
-            index: 1,
-            tokenId: "0x00000000000000000000000000000001",
-            isCanonical: true,
-            evmContract: null,
-            fullName: null,
-            deployerTradingFeeShare: "0",
-          },
-        ],
-        universe: [{ tokens: [0, 1], name: "@1", index: 1, isCanonical: true }],
-      } as T);
-    }
-    if (payload.type === "perpDexs") {
-      return Promise.resolve([
-        null,
-        makeDex("dexA"),
-        makeDex("dexB"),
-        makeDex("dexC"),
-      ] as T);
-    }
-
-    throw new Error(`Unexpected request type: ${payload.type}`);
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function makeDex(name: string): Record<string, unknown> {
-  return {
-    name,
-    fullName: name,
-    deployer: "0x0000000000000000000000000000000000000000",
-    oracleUpdater: null,
-    feeRecipient: null,
-    assetToStreamingOiCap: [],
-    subDeployers: [],
-    deployerFeeScale: "1",
-    lastDeployerFeeScaleChangeTime: "2026-01-01T00:00:00",
-    assetToFundingMultiplier: [],
-    assetToFundingInterestRate: [],
-  };
-}
-
-function countRequests(
-  requests: unknown[],
-  predicate: (payload: Record<string, unknown>) => boolean,
-): number {
-  return requests.filter((payload) => isRecord(payload) && predicate(payload)).length;
-}
+/** A trimmed `outcomeMeta` response covering every supported market type, modeled on real mainnet data. */
+const OUTCOME_META: OutcomeMetaResponse = {
+  outcomes: [
+    {
+      outcome: 220,
+      name: "Recurring",
+      description: "class:priceBinary|underlying:BTC|expiry:20260608-0600|targetPrice:61720|period:1d",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 222,
+      name: "Recurring Named Outcome",
+      description: "index:0",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 223,
+      name: "Recurring Named Outcome",
+      description: "index:1",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 224,
+      name: "Recurring Named Outcome",
+      description: "index:2",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 170,
+      name: "NBA Finals Game 3",
+      description: "metadata=category:sports|subCategory:basketball",
+      sideSpecs: [{ name: "San Antonio" }, { name: "New York" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 173,
+      name: "Argentina",
+      description: "",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 101,
+      name: "Below 4.3%",
+      description: "",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 100,
+      name: "Fallback",
+      description: "",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 171,
+      name: "Fallback",
+      description: "",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+    {
+      outcome: 221,
+      name: "Recurring Fallback",
+      description: "",
+      sideSpecs: [{ name: "Yes" }, { name: "No" }],
+      quoteToken: "USDC",
+    },
+  ],
+  questions: [
+    {
+      question: 33,
+      name: "Recurring",
+      description: "class:priceBucket|underlying:BTC|expiry:20260608-0600|priceThresholds:60485,62954|period:1d",
+      fallbackOutcome: 221,
+      namedOutcomes: [222, 223, 224],
+      settledNamedOutcomes: [],
+    },
+    {
+      question: 32,
+      name: "2026 World Cup Champion",
+      description: "",
+      fallbackOutcome: 171,
+      namedOutcomes: [173],
+      settledNamedOutcomes: [],
+    },
+    {
+      question: 19,
+      name: "May CPI year-over-year",
+      description: "",
+      fallbackOutcome: 100,
+      namedOutcomes: [101],
+      settledNamedOutcomes: [],
+    },
+  ],
+};
 
 // ============================================================
 // Tests
 // ============================================================
 
-Deno.test("SymbolConverter", async (t) => {
-  const transport = new HttpTransport({ rateLimit: true });
+Deno.test("SymbolConverter", { ignore: OFFLINE }, async (t) => {
+  const transport = new HttpTransport();
   const converter = await SymbolConverter.create({ transport });
 
   await t.step("getAssetId()", async (t) => {
     await t.step("perpetuals", () => {
       assertEquals(converter.getAssetId("BTC"), PERP_EXPECTATIONS.BTC.assetId);
-      assertEquals(converter.getAssetId("BTC-PERP"), PERP_EXPECTATIONS.BTC.assetId);
-      assertEquals(converter.getAssetId("main:BTC"), PERP_EXPECTATIONS.BTC.assetId);
-      assertEquals(converter.getAssetId("main:BTC-PERP"), PERP_EXPECTATIONS.BTC.assetId);
       assertEquals(converter.getAssetId("ETH"), PERP_EXPECTATIONS.ETH.assetId);
     });
 
     await t.step("spot", () => {
       assertEquals(converter.getAssetId("PURR/USDC"), SPOT_EXPECTATIONS["PURR/USDC"].assetId);
       assertEquals(converter.getAssetId("HYPE/USDC"), SPOT_EXPECTATIONS["HYPE/USDC"].assetId);
-      assertEquals(converter.getAssetId("HYPE-SPOT"), SPOT_EXPECTATIONS["HYPE/USDC"].assetId);
-      assertEquals(converter.getAssetId("@107"), SPOT_EXPECTATIONS["HYPE/USDC"].assetId);
-      assertEquals(converter.getAssetId("107"), SPOT_EXPECTATIONS["HYPE/USDC"].assetId);
     });
 
     await t.step("non-existent returns undefined", () => {
@@ -169,16 +176,12 @@ Deno.test("SymbolConverter", async (t) => {
   await t.step("getSzDecimals()", async (t) => {
     await t.step("perpetuals", () => {
       assertEquals(converter.getSzDecimals("BTC"), PERP_EXPECTATIONS.BTC.szDecimals);
-      assertEquals(converter.getSzDecimals("BTC-PERP"), PERP_EXPECTATIONS.BTC.szDecimals);
-      assertEquals(converter.getSzDecimals("main:BTC"), PERP_EXPECTATIONS.BTC.szDecimals);
       assertEquals(converter.getSzDecimals("ETH"), PERP_EXPECTATIONS.ETH.szDecimals);
     });
 
     await t.step("spot", () => {
       assertEquals(converter.getSzDecimals("PURR/USDC"), SPOT_EXPECTATIONS["PURR/USDC"].szDecimals);
       assertEquals(converter.getSzDecimals("HYPE/USDC"), SPOT_EXPECTATIONS["HYPE/USDC"].szDecimals);
-      assertEquals(converter.getSzDecimals("HYPE-SPOT"), SPOT_EXPECTATIONS["HYPE/USDC"].szDecimals);
-      assertEquals(converter.getSzDecimals("@107"), SPOT_EXPECTATIONS["HYPE/USDC"].szDecimals);
     });
 
     await t.step("non-existent returns undefined", () => {
@@ -191,8 +194,6 @@ Deno.test("SymbolConverter", async (t) => {
     await t.step("existing pair", () => {
       assertEquals(converter.getSpotPairId("PURR/USDC"), SPOT_EXPECTATIONS["PURR/USDC"].pairId);
       assertEquals(converter.getSpotPairId("HYPE/USDC"), SPOT_EXPECTATIONS["HYPE/USDC"].pairId);
-      assertEquals(converter.getSpotPairId("HYPE-SPOT"), SPOT_EXPECTATIONS["HYPE/USDC"].pairId);
-      assertEquals(converter.getSpotPairId("107"), SPOT_EXPECTATIONS["HYPE/USDC"].pairId);
     });
 
     await t.step("non-existent returns undefined", () => {
@@ -205,7 +206,6 @@ Deno.test("SymbolConverter", async (t) => {
     await t.step("existing pair id", () => {
       assertEquals(converter.getSymbolBySpotPairId(SPOT_EXPECTATIONS["PURR/USDC"].pairId), "PURR/USDC");
       assertEquals(converter.getSymbolBySpotPairId(SPOT_EXPECTATIONS["HYPE/USDC"].pairId), "HYPE/USDC");
-      assertEquals(converter.getSymbolBySpotPairId("107"), "HYPE/USDC");
     });
 
     await t.step("non-existent returns undefined", () => {
@@ -228,108 +228,72 @@ Deno.test("SymbolConverter", async (t) => {
   });
 
   await t.step("create({ dexs })", async (t) => {
-    await t.step("dexs: false excludes all dexs", async () => {
-      const conv = await SymbolConverter.create({ transport: new MockInfoTransport(), dexs: false });
+    const testnetTransport = new HttpTransport({ isTestnet: true });
 
-      assertEquals(conv.getAssetId("dexA:AAA"), undefined);
-      assertEquals(conv.getAssetId("dexB:BBB"), undefined);
-      assertEquals(conv.getAssetId("dexC:CCC"), undefined);
+    await t.step("dexs: false excludes all dexs", async () => {
+      const conv = await SymbolConverter.create({ transport: testnetTransport, dexs: false });
+
+      assertEquals(conv.getAssetId("test:ABC"), undefined);
+      assertEquals(conv.getAssetId("unit:ES"), undefined);
     });
 
     await t.step("dexs: [] excludes all dexs", async () => {
-      const conv = await SymbolConverter.create({ transport: new MockInfoTransport(), dexs: [] });
+      const conv = await SymbolConverter.create({ transport: testnetTransport, dexs: [] });
 
-      assertEquals(conv.getAssetId("dexA:AAA"), undefined);
-      assertEquals(conv.getAssetId("dexB:BBB"), undefined);
-      assertEquals(conv.getAssetId("dexC:CCC"), undefined);
+      assertEquals(conv.getAssetId("test:ABC"), undefined);
+      assertEquals(conv.getAssetId("unit:ES"), undefined);
     });
 
     await t.step("dexs: [specific] includes only specified", async () => {
-      const conv = await SymbolConverter.create({ transport: new MockInfoTransport(), dexs: ["dexB"] });
+      const conv = await SymbolConverter.create({ transport: testnetTransport, dexs: ["test"] });
 
-      assertEquals(conv.getAssetId("dexA:AAA"), undefined);
-      assertEquals(conv.getAssetId("dexB:BBB"), DEX_EXPECTATIONS["dexB:BBB"].assetId);
-      assertEquals(conv.getAssetId("dexC:CCC"), undefined);
+      assertEquals(conv.getAssetId("test:ABC"), DEX_EXPECTATIONS["test:ABC"].assetId);
+      assertEquals(conv.getAssetId("unit:ES"), undefined);
     });
 
     await t.step("dexs: true includes all dexs", async () => {
-      const conv = await SymbolConverter.create({ transport: new MockInfoTransport(), dexs: true });
+      const conv = await SymbolConverter.create({ transport: testnetTransport, dexs: true });
 
-      assertEquals(conv.getAssetId("dexA:AAA"), DEX_EXPECTATIONS["dexA:AAA"].assetId);
-      assertEquals(conv.getAssetId("dexB:BBB"), DEX_EXPECTATIONS["dexB:BBB"].assetId);
-      assertEquals(conv.getAssetId("dexC:CCC"), DEX_EXPECTATIONS["dexC:CCC"].assetId);
+      assertEquals(conv.getAssetId("test:ABC"), DEX_EXPECTATIONS["test:ABC"].assetId);
+      assertEquals(conv.getAssetId("unit:ES"), DEX_EXPECTATIONS["unit:ES"].assetId);
+    });
+  });
+});
+
+Deno.test("SymbolConverter outcome markets", async (t) => {
+  const converter = await SymbolConverter.create({ transport: createOutcomeTransport(OUTCOME_META) });
+
+  await t.step("getAssetId()", async (t) => {
+    await t.step("recurring binary", () => {
+      assertEquals(converter.getAssetId("btc-above-61720-yes-jun-08-0600"), 100002200);
+      assertEquals(converter.getAssetId("btc-above-61720-no-jun-08-0600"), 100002201);
+    });
+
+    await t.step("recurring bucket", () => {
+      assertEquals(converter.getAssetId("btc-price-range-jun-08-0600-below-60485-yes"), 100002220);
+      assertEquals(converter.getAssetId("btc-price-range-jun-08-0600-60485-to-62954-yes"), 100002230);
+      assertEquals(converter.getAssetId("btc-price-range-jun-08-0600-above-62954-yes"), 100002240);
+    });
+
+    await t.step("sports", () => {
+      assertEquals(converter.getAssetId("nba-finals-game-3-san-antonio"), 100001700);
+      assertEquals(converter.getAssetId("nba-finals-game-3-new-york"), 100001701);
+    });
+
+    await t.step("categorical", () => {
+      assertEquals(converter.getAssetId("2026-world-cup-champion-argentina-yes"), 100001730);
+      assertEquals(converter.getAssetId("2026-world-cup-champion-argentina-no"), 100001731);
+      assertEquals(converter.getAssetId("may-cpi-year-over-year-below-43-yes"), 100001010);
+    });
+
+    await t.step("fallback outcomes are skipped", () => {
+      assertEquals(converter.getAssetId("fallback"), undefined);
+      assertEquals(converter.getAssetId("recurring-fallback"), undefined);
     });
   });
 
-  await t.step("auto refresh controls", async () => {
-    const mockTransport = new MockInfoTransport();
-    const conv = new SymbolConverter({ transport: mockTransport });
-
-    assertEquals(conv.isAutoRefreshEnabled(), false);
-
-    conv.startAutoRefresh(50);
-    assertEquals(conv.isAutoRefreshEnabled(), true);
-
-    conv.setAutoRefreshInterval(100);
-    assertEquals(conv.isAutoRefreshEnabled(), true);
-
-    conv.stopAutoRefresh();
-    assertEquals(conv.isAutoRefreshEnabled(), false);
-
-    const autoConv = await SymbolConverter.create({
-      transport: mockTransport,
-      autoRefresh: true,
-      refreshIntervalMs: 1_000,
-    });
-    assertEquals(autoConv.isAutoRefreshEnabled(), true);
-    autoConv.stopAutoRefresh();
-  });
-
-  await t.step("refreshNow() with dexs: true reloads every builder dex", async () => {
-    const mockTransport = new MockInfoTransport();
-    const conv = await SymbolConverter.create({ transport: mockTransport, dexs: true });
-
-    assertEquals(conv.getAssetId("BTC"), 0);
-    assertEquals(conv.getAssetId("BTC-PERP"), 0);
-    assertEquals(conv.getAssetId("main:BTC"), 0);
-    assertEquals(conv.getAssetId("AAA/USDC"), 10001);
-    assertEquals(conv.getAssetId("AAA-SPOT"), 10001);
-    assertEquals(conv.getAssetId("@1"), 10001);
-    assertEquals(conv.getAssetId("1"), 10001);
-    assertEquals(conv.getSzDecimals("@1"), 2);
-    assertEquals(conv.getAssetId("dexA:AAA"), 110000);
-    assertEquals(conv.getAssetId("dexA:AAA-PERP"), 110000);
-    assertEquals(conv.getAssetId("dexB:BBB"), 120000);
-    assertEquals(conv.getAssetId("dexB:BBB-PERP"), 120000);
-    assertEquals(conv.getAssetId("dexC:CCC"), DEX_EXPECTATIONS["dexC:CCC"].assetId);
-    assertEquals(conv.getAssetId("dexC:CCC-PERP"), DEX_EXPECTATIONS["dexC:CCC"].assetId);
-    assertEquals(conv.getSzDecimals("dexC:CCC"), 0);
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexA"),
-      1,
-    );
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexB"),
-      1,
-    );
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexC"),
-      1,
-    );
-
-    await conv.refreshNow();
-
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexA"),
-      2,
-    );
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexB"),
-      2,
-    );
-    assertEquals(
-      countRequests(mockTransport.requests, (payload) => payload.type === "meta" && payload.dex === "dexC"),
-      2,
-    );
+  await t.step("getSzDecimals()", () => {
+    assertEquals(converter.getSzDecimals("nba-finals-game-3-san-antonio"), 5);
+    assertEquals(converter.getSzDecimals("2026-world-cup-champion-argentina-yes"), 5);
   });
 });

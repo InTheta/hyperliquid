@@ -50,7 +50,7 @@ runTest({
         };
         return { params, result: await exchClient.batchModify(params) };
       })(),
-      // filled | oid cloid | Gtc | cloid
+      // filled | oid cloid | Gtc | cloid | always place
       (async () => {
         const order = await openOrder(exchClient, "limit");
         const params: BatchModifyParameters = {
@@ -66,11 +66,12 @@ runTest({
               c: order.cloid,
             },
           }],
+          a: true,
         };
         return { params, result: await exchClient.batchModify(params) };
       })(),
     ]);
-    // filled | Ioc
+    // filled | Ioc | always place
     const ioc = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: BatchModifyParameters = {
@@ -85,10 +86,11 @@ runTest({
             t: { limit: { tif: "Ioc" } },
           },
         }],
+        a: true,
       };
       return { params, result: await exchClient.batchModify(params) };
     })();
-    // filled | FrontendMarket
+    // filled | FrontendMarket | always place
     const frontendMarket = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: BatchModifyParameters = {
@@ -103,10 +105,11 @@ runTest({
             t: { limit: { tif: "FrontendMarket" } },
           },
         }],
+        a: true,
       };
       return { params, result: await exchClient.batchModify(params) };
     })();
-    // resting | trigger | tp
+    // resting | trigger | tp | always place
     const triggerTp = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: BatchModifyParameters = {
@@ -121,10 +124,11 @@ runTest({
             t: { trigger: { isMarket: true, triggerPx: order.pxUp, tpsl: "tp" } },
           },
         }],
+        a: true,
       };
       return { params, result: await exchClient.batchModify(params) };
     })();
-    // resting | trigger | sl
+    // resting | trigger | sl | always place
     const triggerSl = await (async () => {
       const order = await openOrder(exchClient, "limit");
       const params: BatchModifyParameters = {
@@ -139,6 +143,7 @@ runTest({
             t: { trigger: { isMarket: false, triggerPx: order.pxDown, tpsl: "sl" } },
           },
         }],
+        a: true,
       };
       return { params, result: await exchClient.batchModify(params) };
     })();

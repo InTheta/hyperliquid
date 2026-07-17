@@ -13,6 +13,7 @@ import { cleanupTempExchangeClient, createTempExchangeClient } from "../exchange
 // =============================================================
 
 const WAIT = 5000;
+const OFFLINE = Deno.args.includes("--offline");
 
 // =============================================================
 // Test
@@ -25,7 +26,7 @@ export function runTest(options: {
 }): void {
   const { name, mode, fn } = options;
 
-  Deno.test(name, async (t) => {
+  Deno.test(name, { ignore: OFFLINE }, async (t) => {
     await new Promise((r) => setTimeout(r, WAIT)); // delay to avoid rate limits
 
     // --- Preparation ------------------------------------------------
@@ -37,10 +38,10 @@ export function runTest(options: {
     // --- Test ------------------------------------------------
 
     await fn(t, subsClient)
-      .finally(async () => {
+      .finally(() => {
         // --- Cleanup ------------------------------------------------
 
-        await transport.close();
+        transport.close();
       });
   });
 }
@@ -58,7 +59,7 @@ export function runTestWithExchange(options: {
 }): void {
   const { name, fn } = options;
 
-  Deno.test(name, async (t) => {
+  Deno.test(name, { ignore: OFFLINE }, async (t) => {
     await new Promise((r) => setTimeout(r, WAIT)); // delay to avoid rate limits
 
     // --- Preparation ------------------------------------------------
@@ -77,7 +78,7 @@ export function runTestWithExchange(options: {
         // --- Cleanup ------------------------------------------------
 
         await cleanupTempExchangeClient(exchClient);
-        await transport.close();
+        transport.close();
       });
   });
 }
@@ -88,13 +89,13 @@ export function runTestWithExchange(options: {
 
 export { createTWAP, openOrder } from "../exchange/_t.ts";
 
-export function collectEventsOverTime<T>(
-  fn: (cb: (event: T) => void) => unknown,
+/** Collects events for a fixed interval after asynchronous setup completes. */
+export async function collectEventsOverTime<T>(
+  fn: (cb: (event: T) => void) => void | Promise<void>,
   durationMs: number,
 ): Promise<T[]> {
-  return new Promise((resolve) => {
-    const data: T[] = [];
-    fn((event) => data.push(event));
-    setTimeout(() => resolve(data), durationMs);
-  });
+  const data: T[] = [];
+  await fn((event) => data.push(event));
+  await new Promise((resolve) => setTimeout(resolve, durationMs));
+  return data;
 }

@@ -16,8 +16,6 @@ export const SpotClearinghouseStateRequest = /* @__PURE__ */ (() => {
     type: v.literal("spotClearinghouseState"),
     /** User address. */
     user: Address,
-    /** DEX name (empty string for main dex). */
-    dex: v.optional(v.string()),
   });
 })();
 export type SpotClearinghouseStateRequest = v.InferOutput<typeof SpotClearinghouseStateRequest>;
@@ -27,12 +25,52 @@ export type SpotClearinghouseStateRequest = v.InferOutput<typeof SpotClearinghou
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot#retrieve-a-users-token-balances
  */
 export type SpotClearinghouseStateResponse = {
+  /** Whether portfolio margin is enabled for the account. */
+  portfolioMarginEnabled?: boolean;
   /** Array of available token balances. */
-  balances: {
-    /** Asset symbol. */
+  balances: ({
+    /** Asset symbol (e.g., USDC). */
     coin: string;
     /** Unique identifier for the token. */
     token: number;
+    /**
+     * Total balance.
+     * @pattern ^-?[0-9]+(\.[0-9]+)?$
+     */
+    total: string;
+    /**
+     * Amount on hold.
+     * @pattern ^-?[0-9]+(\.[0-9]+)?$
+     */
+    hold: string;
+    /**
+     * Entry notional value.
+     * @pattern ^-?[0-9]+(\.[0-9]+)?$
+     */
+    entryNtl: string;
+    /**
+     * Amount on hold in spot.
+     * @pattern ^-?[0-9]+(\.[0-9]+)?$
+     */
+    spotHold?: string;
+    /**
+     * Loan-to-value ratio.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    ltv?: string;
+    /**
+     * Borrowed amount.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    borrowed?: string;
+    /**
+     * Supplied amount.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    supplied?: string;
+  } | {
+    /** Outcome market identifier ("+" followed by `assetId - 100000000`). */
+    coin: `+${number}`;
     /**
      * Total balance.
      * @pattern ^[0-9]+(\.[0-9]+)?$
@@ -48,10 +86,10 @@ export type SpotClearinghouseStateResponse = {
      * @pattern ^[0-9]+(\.[0-9]+)?$
      */
     entryNtl: string;
-  }[];
+  })[];
   /** Array of escrowed balances. */
   evmEscrows?: {
-    /** Asset symbol. */
+    /** Asset symbol (e.g., USDC). */
     coin: string;
     /** Unique identifier for the token. */
     token: number;
@@ -61,6 +99,31 @@ export type SpotClearinghouseStateResponse = {
      */
     total: string;
   }[];
+  /**
+   * Portfolio margin ratio.
+   * @pattern ^[0-9]+(\.[0-9]+)?$
+   */
+  portfolioMarginRatio?: string;
+  /** Portfolio borrow ratio per token. */
+  tokenToPortfolioBorrowRatio?: [
+    /** Token identifier. */
+    token: number,
+    /**
+     * Borrow ratio.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    ratio: string,
+  ][];
+  /** Amount available after maintenance per token. */
+  tokenToAvailableAfterMaintenance?: [
+    /** Token identifier. */
+    token: number,
+    /**
+     * Available amount.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    amount: string,
+  ][];
 };
 
 // ============================================================
@@ -68,7 +131,7 @@ export type SpotClearinghouseStateResponse = {
 // ============================================================
 
 import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/types.ts";
+import type { InfoConfig } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode spotClearinghouseState} function. */
 export type SpotClearinghouseStateParameters = Omit<v.InferInput<typeof SpotClearinghouseStateRequest>, "type">;

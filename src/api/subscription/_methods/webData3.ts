@@ -34,7 +34,7 @@ export type WebData3Event = {
      * @pattern ^0x[a-fA-F0-9]{40}$
      */
     agentAddress: `0x${string}` | null;
-    /** Timestamp until which the agent is valid. */
+    /** Timestamp until which the agent is valid (in ms since epoch). */
     agentValidUntil: number | null;
     /**
      * Cumulative ledger value.
@@ -55,7 +55,7 @@ export type WebData3Event = {
     /** Whether DEX abstraction is enabled. */
     dexAbstractionEnabled?: boolean;
     /** Abstraction mode for the user account. */
-    abstraction?: "dexAbstraction" | "unifiedAccount" | "portfolioMargin" | "disabled";
+    abstraction?: "unifiedAccount" | "portfolioMargin" | "disabled";
   };
   /** Array of perpetual DEX states. */
   perpDexStates: {
@@ -77,7 +77,7 @@ export type WebData3Event = {
 
 import { parse } from "../../../_base.ts";
 import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig } from "./_types.ts";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
 
 /** Request parameters for the {@linkcode webData3} function. */
 export type WebData3Parameters = Omit<v.InferInput<typeof WebData3Request>, "type">;
@@ -88,6 +88,7 @@ export type WebData3Parameters = Omit<v.InferInput<typeof WebData3Request>, "typ
  * @param config General configuration for Subscription API subscriptions.
  * @param params Parameters specific to the API subscription.
  * @param listener A callback function to be called when the event is received.
+ * @param options Options to control the subscription lifecycle.
  * @return A request-promise that resolves with a {@link ISubscription} object to manage the subscription lifecycle.
  *
  * @throws {ValidationError} When the request parameters fail validation (before sending).
@@ -113,11 +114,12 @@ export function webData3(
   config: SubscriptionConfig,
   params: WebData3Parameters,
   listener: (data: WebData3Event) => void,
+  options?: SubscriptionOptions,
 ): Promise<ISubscription> {
   const payload = parse(WebData3Request, { type: "webData3", ...params });
   return config.transport.subscribe<WebData3Event>(payload.type, payload, (e) => {
     if (e.detail.userState.user === payload.user) {
       listener(e.detail);
     }
-  });
+  }, options);
 }

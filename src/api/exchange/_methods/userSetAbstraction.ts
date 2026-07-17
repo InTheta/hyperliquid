@@ -8,6 +8,9 @@ import { Address, Hex, UnsignedInteger } from "../../_schemas.ts";
 
 /**
  * Set user abstraction mode.
+ *
+ * Like {@link agentSetAbstraction} but signed via EIP-712 by the principal (instead of as an L1 action by the agent wallet).
+ *
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#set-user-abstraction
  */
 export const UserSetAbstractionRequest = /* @__PURE__ */ (() => {
@@ -18,12 +21,12 @@ export const UserSetAbstractionRequest = /* @__PURE__ */ (() => {
       type: v.literal("userSetAbstraction"),
       /** Chain ID in hex format for EIP-712 signing. */
       signatureChainId: Hex,
-      /** HyperLiquid network type. */
+      /** Hyperliquid network type. */
       hyperliquidChain: v.picklist(["Mainnet", "Testnet"]),
       /** User address. */
       user: Address,
       /** Abstraction mode to set. */
-      abstraction: v.picklist(["dexAbstraction", "unifiedAccount", "portfolioMargin", "disabled"]),
+      abstraction: v.picklist(["disabled", "unifiedAccount", "portfolioMargin"]),
       /** Nonce (timestamp in ms) used to prevent replay attacks. */
       nonce: UnsignedInteger,
     }),
@@ -69,8 +72,12 @@ export type UserSetAbstractionResponse =
 
 import { parse } from "../../../_base.ts";
 import { canonicalize } from "../../../signing/mod.ts";
-import type { ExcludeErrorResponse } from "./_base/errors.ts";
-import { type ExchangeConfig, executeUserSignedAction, type ExtractRequestOptions } from "./_base/execute.ts";
+import {
+  type ExchangeConfig,
+  type ExcludeErrorResponse,
+  executeUserSignedAction,
+  type ExtractRequestOptions,
+} from "./_base/mod.ts";
 
 /** Schema for action fields (excludes request-level system fields). */
 const UserSetAbstractionActionSchema = /* @__PURE__ */ (() => {
@@ -99,8 +106,18 @@ export const UserSetAbstractionTypes = {
   ],
 };
 
+/** Produces the action representation serialized into a multi-sig payload. */
+function toMultiSigPayloadAction(action: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  if (action.abstraction === "disabled") return { ...action, abstraction: "i" };
+  if (action.abstraction === "unifiedAccount") return { ...action, abstraction: "u" };
+  if (action.abstraction === "portfolioMargin") return { ...action, abstraction: "p" };
+  return action;
+}
+
 /**
  * Set user abstraction mode.
+ *
+ * Like {@link agentSetAbstraction} but signed via EIP-712 by the principal (instead of as an L1 action by the agent wallet).
  *
  * Signing: User-Signed EIP-712.
  *
@@ -124,7 +141,7 @@ export const UserSetAbstractionTypes = {
  *
  * await userSetAbstraction({ transport, wallet }, {
  *   user: "0x...",
- *   abstraction: "dexAbstraction",
+ *   abstraction: "unifiedAccount",
  * });
  * ```
  *
@@ -139,5 +156,10 @@ export function userSetAbstraction(
     UserSetAbstractionActionSchema,
     parse(UserSetAbstractionActionSchema, { type: "userSetAbstraction", ...params }),
   );
-  return executeUserSignedAction(config, action, UserSetAbstractionTypes, opts);
+  return executeUserSignedAction(
+    config,
+    action,
+    UserSetAbstractionTypes,
+    { ...opts, toMultiSigPayloadAction },
+  );
 }

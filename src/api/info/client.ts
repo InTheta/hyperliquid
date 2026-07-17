@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { InfoConfig } from "./_methods/_base/types.ts";
+import type { InfoConfig } from "./_methods/_base/mod.ts";
 
 // ============================================================
 // Methods Imports
@@ -15,11 +15,6 @@ import {
   type ActiveAssetDataResponse,
 } from "./_methods/activeAssetData.ts";
 import {
-  alignedQuoteTokenInfo,
-  type AlignedQuoteTokenInfoParameters,
-  type AlignedQuoteTokenInfoResponse,
-} from "./_methods/alignedQuoteTokenInfo.ts";
-import {
   allBorrowLendReserveStates,
   type AllBorrowLendReserveStatesResponse,
 } from "./_methods/allBorrowLendReserveStates.ts";
@@ -30,7 +25,6 @@ import {
   type ApprovedBuildersParameters,
   type ApprovedBuildersResponse,
 } from "./_methods/approvedBuilders.ts";
-import { blockDetails, type BlockDetailsParameters, type BlockDetailsResponse } from "./_methods/blockDetails.ts";
 import {
   borrowLendReserveState,
   type BorrowLendReserveStateParameters,
@@ -79,6 +73,10 @@ import {
   type FundingHistoryParameters,
   type FundingHistoryResponse,
 } from "./_methods/fundingHistory.ts";
+import {
+  gossipPriorityAuctionStatus,
+  type GossipPriorityAuctionStatusResponse,
+} from "./_methods/gossipPriorityAuctionStatus.ts";
 import { gossipRootIps, type GossipRootIpsResponse } from "./_methods/gossipRootIps.ts";
 import {
   historicalOrders,
@@ -128,6 +126,11 @@ import {
 import { recentTrades, type RecentTradesParameters, type RecentTradesResponse } from "./_methods/recentTrades.ts";
 import { referral, type ReferralParameters, type ReferralResponse } from "./_methods/referral.ts";
 import {
+  settledOutcome,
+  type SettledOutcomeParameters,
+  type SettledOutcomeResponse,
+} from "./_methods/settledOutcome.ts";
+import {
   spotClearinghouseState,
   type SpotClearinghouseStateParameters,
   type SpotClearinghouseStateResponse,
@@ -147,7 +150,6 @@ import { subAccounts, type SubAccountsParameters, type SubAccountsResponse } fro
 import { subAccounts2, type SubAccounts2Parameters, type SubAccounts2Response } from "./_methods/subAccounts2.ts";
 import { tokenDetails, type TokenDetailsParameters, type TokenDetailsResponse } from "./_methods/tokenDetails.ts";
 import { twapHistory, type TwapHistoryParameters, type TwapHistoryResponse } from "./_methods/twapHistory.ts";
-import { txDetails, type TxDetailsParameters, type TxDetailsResponse } from "./_methods/txDetails.ts";
 import {
   userAbstraction,
   type UserAbstractionParameters,
@@ -158,7 +160,6 @@ import {
   type UserBorrowLendInterestParameters,
   type UserBorrowLendInterestResponse,
 } from "./_methods/userBorrowLendInterest.ts";
-import { userDetails, type UserDetailsParameters, type UserDetailsResponse } from "./_methods/userDetails.ts";
 import {
   userDexAbstraction,
   type UserDexAbstractionParameters,
@@ -265,35 +266,6 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
   }
 
   /**
-   * Request supply, rate, and pending payment information for an aligned quote token.
-   *
-   * @param params Parameters specific to the API request.
-   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return Supply, rate, and pending payment information for an aligned quote token.
-   *
-   * @throws {ValidationError} When the request parameters fail validation (before sending).
-   * @throws {TransportError} When the transport layer throws an error.
-   *
-   * @example
-   * ```ts
-   * import * as hl from "@nktkas/hyperliquid";
-   *
-   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
-   * const client = new hl.InfoClient({ transport });
-   *
-   * const data = await client.alignedQuoteTokenInfo({ token: 1328 });
-   * ```
-   *
-   * @see null
-   */
-  alignedQuoteTokenInfo(
-    params: AlignedQuoteTokenInfoParameters,
-    signal?: AbortSignal,
-  ): Promise<AlignedQuoteTokenInfoResponse> {
-    return alignedQuoteTokenInfo(this.config_, params, signal);
-  }
-
-  /**
    * Request all borrow/lend reserve states.
    *
    * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
@@ -359,10 +331,10 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
   }
 
   /**
-   * Request trading metadata for all DEXes.
+   * Request trading metadata for all DEXs.
    *
    * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return Metadata for perpetual assets across all DEXes.
+   * @return Metadata for perpetual assets across all DEXs.
    *
    * @throws {ValidationError} When the request parameters fail validation (before sending).
    * @throws {TransportError} When the transport layer throws an error.
@@ -377,7 +349,7 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
    * const data = await client.allPerpMetas();
    * ```
    *
-   * @see null
+   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-all-perpetuals-metadata-universe-and-margin-tables
    */
   allPerpMetas(
     signal?: AbortSignal,
@@ -412,35 +384,6 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
     signal?: AbortSignal,
   ): Promise<ApprovedBuildersResponse> {
     return approvedBuilders(this.config_, params, signal);
-  }
-
-  /**
-   * Request block details by block height.
-   *
-   * @param params Parameters specific to the API request.
-   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return Response containing block information.
-   *
-   * @throws {ValidationError} When the request parameters fail validation (before sending).
-   * @throws {TransportError} When the transport layer throws an error.
-   *
-   * @example
-   * ```ts
-   * import * as hl from "@nktkas/hyperliquid";
-   *
-   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
-   * const client = new hl.InfoClient({ transport });
-   *
-   * const data = await client.blockDetails({ height: 123 });
-   * ```
-   *
-   * @see null
-   */
-  blockDetails(
-    params: BlockDetailsParameters,
-    signal?: AbortSignal,
-  ): Promise<BlockDetailsResponse> {
-    return blockDetails(this.config_, params, signal);
   }
 
   /**
@@ -794,6 +737,33 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
     signal?: AbortSignal,
   ): Promise<FundingHistoryResponse> {
     return fundingHistory(this.config_, params, signal);
+  }
+
+  /**
+   * Request gossip priority auction status (previous winners and current auctions).
+   *
+   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
+   * @return Gossip priority auction status.
+   *
+   * @throws {ValidationError} When the request parameters fail validation (before sending).
+   * @throws {TransportError} When the transport layer throws an error.
+   *
+   * @example
+   * ```ts
+   * import * as hl from "@nktkas/hyperliquid";
+   *
+   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
+   * const client = new hl.InfoClient({ transport });
+   *
+   * const data = await client.gossipPriorityAuctionStatus();
+   * ```
+   *
+   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/priority-fees
+   */
+  gossipPriorityAuctionStatus(
+    signal?: AbortSignal,
+  ): Promise<GossipPriorityAuctionStatusResponse> {
+    return gossipPriorityAuctionStatus(this.config_, signal);
   }
 
   /**
@@ -1233,7 +1203,7 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
    * const data = await client.outcomeMeta();
    * ```
    *
-   * @see null
+   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot#retrieve-outcome-metadata
    */
   outcomeMeta(
     signal?: AbortSignal,
@@ -1289,7 +1259,7 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
    * const data = await client.perpCategories();
    * ```
    *
-   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-perpetual-asset-categories
+   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-perp-categories
    */
   perpCategories(
     signal?: AbortSignal,
@@ -1618,6 +1588,35 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
   }
 
   /**
+   * Request information about a settled outcome.
+   *
+   * @param params Parameters specific to the API request.
+   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
+   * @return Information about a settled outcome.
+   *
+   * @throws {ValidationError} When the request parameters fail validation (before sending).
+   * @throws {TransportError} When the transport layer throws an error.
+   *
+   * @example
+   * ```ts
+   * import * as hl from "@nktkas/hyperliquid";
+   *
+   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
+   * const client = new hl.InfoClient({ transport });
+   *
+   * const data = await client.settledOutcome({ outcome: 0 });
+   * ```
+   *
+   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot#retrieve-information-about-a-settled-outcome
+   */
+  settledOutcome(
+    params: SettledOutcomeParameters,
+    signal?: AbortSignal,
+  ): Promise<SettledOutcomeResponse> {
+    return settledOutcome(this.config_, params, signal);
+  }
+
+  /**
    * Request spot clearinghouse state.
    *
    * @param params Parameters specific to the API request.
@@ -1873,35 +1872,6 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
   }
 
   /**
-   * Request transaction details by transaction hash.
-   *
-   * @param params Parameters specific to the API request.
-   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return Transaction details.
-   *
-   * @throws {ValidationError} When the request parameters fail validation (before sending).
-   * @throws {TransportError} When the transport layer throws an error.
-   *
-   * @example
-   * ```ts
-   * import * as hl from "@nktkas/hyperliquid";
-   *
-   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
-   * const client = new hl.InfoClient({ transport });
-   *
-   * const data = await client.txDetails({ hash: "0x..." });
-   * ```
-   *
-   * @see null
-   */
-  txDetails(
-    params: TxDetailsParameters,
-    signal?: AbortSignal,
-  ): Promise<TxDetailsResponse> {
-    return txDetails(this.config_, params, signal);
-  }
-
-  /**
    * Request user abstraction state.
    *
    * @param params Parameters specific to the API request.
@@ -1953,42 +1923,13 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
    * });
    * ```
    *
-   * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-borrow-lend-user-state
+   * @see null
    */
   userBorrowLendInterest(
     params: UserBorrowLendInterestParameters,
     signal?: AbortSignal,
   ): Promise<UserBorrowLendInterestResponse> {
     return userBorrowLendInterest(this.config_, params, signal);
-  }
-
-  /**
-   * Request array of user transaction details.
-   *
-   * @param params Parameters specific to the API request.
-   * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
-   * @return Array of user transaction details.
-   *
-   * @throws {ValidationError} When the request parameters fail validation (before sending).
-   * @throws {TransportError} When the transport layer throws an error.
-   *
-   * @example
-   * ```ts
-   * import * as hl from "@nktkas/hyperliquid";
-   *
-   * const transport = new hl.HttpTransport(); // or `WebSocketTransport`
-   * const client = new hl.InfoClient({ transport });
-   *
-   * const data = await client.userDetails({ user: "0x..." });
-   * ```
-   *
-   * @see null
-   */
-  userDetails(
-    params: UserDetailsParameters,
-    signal?: AbortSignal,
-  ): Promise<UserDetailsResponse> {
-    return userDetails(this.config_, params, signal);
   }
 
   /**
@@ -2458,6 +2399,8 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
   /**
    * Request comprehensive user and market data.
    *
+   * @deprecated use `webData3` and other component subscriptions instead.
+   *
    * @param params Parameters specific to the API request.
    * @param signal {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal} to cancel the request.
    * @return Comprehensive user and market data.
@@ -2489,18 +2432,13 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
 // Type Re-exports
 // ============================================================
 
-export type { InfoConfig } from "./_methods/_base/types.ts";
+export type { InfoConfig } from "./_methods/_base/mod.ts";
 
 export type { ActiveAssetDataParameters, ActiveAssetDataResponse } from "./_methods/activeAssetData.ts";
-export type {
-  AlignedQuoteTokenInfoParameters,
-  AlignedQuoteTokenInfoResponse,
-} from "./_methods/alignedQuoteTokenInfo.ts";
 export type { AllBorrowLendReserveStatesResponse } from "./_methods/allBorrowLendReserveStates.ts";
 export type { AllMidsParameters, AllMidsResponse } from "./_methods/allMids.ts";
 export type { AllPerpMetasResponse } from "./_methods/allPerpMetas.ts";
 export type { ApprovedBuildersParameters, ApprovedBuildersResponse } from "./_methods/approvedBuilders.ts";
-export type { BlockDetailsParameters, BlockDetailsResponse } from "./_methods/blockDetails.ts";
 export type {
   BorrowLendReserveStateParameters,
   BorrowLendReserveStateResponse,
@@ -2516,6 +2454,7 @@ export type { ExchangeStatusResponse } from "./_methods/exchangeStatus.ts";
 export type { ExtraAgentsParameters, ExtraAgentsResponse } from "./_methods/extraAgents.ts";
 export type { FrontendOpenOrdersParameters, FrontendOpenOrdersResponse } from "./_methods/frontendOpenOrders.ts";
 export type { FundingHistoryParameters, FundingHistoryResponse } from "./_methods/fundingHistory.ts";
+export type { GossipPriorityAuctionStatusResponse } from "./_methods/gossipPriorityAuctionStatus.ts";
 export type { GossipRootIpsResponse } from "./_methods/gossipRootIps.ts";
 export type { HistoricalOrdersParameters, HistoricalOrdersResponse } from "./_methods/historicalOrders.ts";
 export type { IsVipParameters, IsVipResponse } from "./_methods/isVip.ts";
@@ -2547,6 +2486,7 @@ export type { PredictedFundingsResponse } from "./_methods/predictedFundings.ts"
 export type { PreTransferCheckParameters, PreTransferCheckResponse } from "./_methods/preTransferCheck.ts";
 export type { RecentTradesParameters, RecentTradesResponse } from "./_methods/recentTrades.ts";
 export type { ReferralParameters, ReferralResponse } from "./_methods/referral.ts";
+export type { SettledOutcomeParameters, SettledOutcomeResponse } from "./_methods/settledOutcome.ts";
 export type {
   SpotClearinghouseStateParameters,
   SpotClearinghouseStateResponse,
@@ -2559,13 +2499,11 @@ export type { SubAccountsParameters, SubAccountsResponse } from "./_methods/subA
 export type { SubAccounts2Parameters, SubAccounts2Response } from "./_methods/subAccounts2.ts";
 export type { TokenDetailsParameters, TokenDetailsResponse } from "./_methods/tokenDetails.ts";
 export type { TwapHistoryParameters, TwapHistoryResponse } from "./_methods/twapHistory.ts";
-export type { TxDetailsParameters, TxDetailsResponse } from "./_methods/txDetails.ts";
 export type { UserAbstractionParameters, UserAbstractionResponse } from "./_methods/userAbstraction.ts";
 export type {
   UserBorrowLendInterestParameters,
   UserBorrowLendInterestResponse,
 } from "./_methods/userBorrowLendInterest.ts";
-export type { UserDetailsParameters, UserDetailsResponse } from "./_methods/userDetails.ts";
 export type {
   UserDexAbstractionParameters as UserDexAbstractionInfoParameters,
   UserDexAbstractionResponse as UserDexAbstractionInfoResponse,
