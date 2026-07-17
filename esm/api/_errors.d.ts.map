@@ -1,0 +1,1 @@
+{"version":3,"file":"_errors.d.ts","sourceRoot":"","sources":["../../src/api/_errors.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,gBAAgB,EAAE,MAAM,aAAa,CAAC;AAE/C,qDAAqD;AACrD,qBAAa,eAAgB,SAAQ,gBAAgB;IACnD,gDAAgD;IAChD,QAAQ,CAAC,QAAQ,EAAE,OAAO,CAAC;IAE3B;;;OAGG;gBACS,QAAQ,EAAE,OAAO,EAAE,OAAO,CAAC,EAAE,MAAM;CAKhD"}
