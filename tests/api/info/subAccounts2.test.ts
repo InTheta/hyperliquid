@@ -14,6 +14,7 @@ runTest({
   codeTestFn: async (_t, client) => {
     const params: SubAccounts2Parameters[] = [
       { user: "0x563C175E6f11582f65D6d9E360A618699DEe14a9" }, // length > 0
+      { user: "0x8c967e73e7b15087c42a10d344cff4c96d877f1d" }, // abstraction present
       { user: "0x0000000000000000000000000000000000000001" }, // null
     ];
 
@@ -28,6 +29,7 @@ runTest({
       "#/anyOf/0/items/properties/spotState/properties/portfolioMarginEnabled/present",
       "#/anyOf/0/items/properties/spotState/properties/portfolioMarginRatio/present",
       "#/anyOf/0/items/properties/spotState/properties/tokenToPortfolioBorrowRatio/present",
+      "#/anyOf/0/items/properties/spotState/properties/tokenToPortfolioSupplyRatio/present",
       "#/anyOf/0/items/properties/spotState/properties/tokenToAvailableAfterMaintenance/present",
       "#/anyOf/0/items/properties/spotState/properties/balances/items/anyOf/0/properties/spotHold/present",
       "#/anyOf/0/items/properties/spotState/properties/balances/items/anyOf/0/properties/ltv/present",

@@ -35,8 +35,8 @@ jobs:
           # If no known tag found but version contains hyphen, use "prerelease"
           [[ -z "$TAG" && "$VERSION" == *-* ]] && TAG="prerelease"
           # Default to "latest" if no tag determined
-          echo "value=${TAG:-latest}" >> $GITHUB_OUTPUT
+          echo "value=${TAG:-latest}" >> "$GITHUB_OUTPUT"
 
       - name: Publish package
         working-directory: ./dist
-        run: npm publish --tag ${{ steps.tag.outputs.value }}
+        run: npm publish --tag "${{ steps.tag.outputs.value }}"

@@ -156,6 +156,9 @@ export type FrontendOpenOrder = {
    * - `"Stop Limit"`: Activates as a limit order when a stop price is reached.
    * - `"Take Profit Market"`: Executes as a market order when a take profit price is reached.
    * - `"Take Profit Limit"`: Executes as a limit order when a take profit price is reached.
+   * - `"Twap Slice"`: Executes a single slice of a TWAP order.
+   * - `"Vault Close"`: Closes a vault position.
+   * - `"Spot Dust Conversion"`: Converts residual spot balances.
    * @see https://hyperliquid.gitbook.io/hyperliquid-docs/trading/order-types
    */
   orderType:
@@ -164,7 +167,10 @@ export type FrontendOpenOrder = {
     | "Stop Market"
     | "Stop Limit"
     | "Take Profit Market"
-    | "Take Profit Limit";
+    | "Take Profit Limit"
+    | "Twap Slice"
+    | "Vault Close"
+    | "Spot Dust Conversion";
   /**
    * Time-in-force:
    * - `"Gtc"`: Remains active until filled or canceled.
@@ -244,12 +250,27 @@ export type TwapState = {
   /** Order side ("B" = Bid/Buy, "A" = Ask/Sell). */
   side: "B" | "A";
   /**
+   * Price at which the order is terminated; `null` when unset.
+   * @pattern ^[0-9]+(\.[0-9]+)?$
+   */
+  stopPx: string | null;
+  /**
    * Order size.
    * @pattern ^[0-9]+(\.[0-9]+)?$
    */
   sz: string;
   /** Start time of the TWAP order (in ms since epoch). */
   timestamp: number;
+  /** Condition that activates the order; `null` when unset. */
+  trigger: {
+    /**
+     * Trigger price.
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+    px: string;
+    /** Activates when the mark price is above (`true`) or below (`false`) the trigger price. */
+    above: boolean;
+  } | null;
   /**
    * User address.
    * @pattern ^0x[a-fA-F0-9]{40}$
@@ -327,6 +348,11 @@ export type UserFill = {
   tid: number;
   /** Token in which the fee is denominated (e.g., USDC). */
   feeToken: string;
+  /**
+   * Fee trial escrow amount.
+   * @pattern ^[0-9]+(\.[0-9]+)?$
+   */
+  feeTrialEscrow?: string;
   /** ID of the TWAP. */
   twapId: number | null;
 };
@@ -346,7 +372,9 @@ export type UserFill = {
  * - `"siblingFilledCanceled"`: Canceled due to sibling ordering being filled.
  * - `"delistedCanceled"`: Canceled due to asset delisting.
  * - `"liquidatedCanceled"`: Canceled due to liquidation.
+ * - `"outcomeSettledCanceled"`: Canceled due to outcome market settlement.
  * - `"scheduledCancel"`: Canceled due to exceeding scheduled cancel deadline (dead man's switch).
+ * - `"internalCancel"`: Canceled due to an internal error.
  * - `"tickRejected"`: Rejected due to invalid tick price.
  * - `"minTradeNtlRejected"`: Rejected due to order notional below minimum.
  * - `"perpMarginRejected"`: Rejected due to insufficient margin.
@@ -362,6 +390,7 @@ export type UserFill = {
  * - `"insufficientSpotBalanceRejected"`: Rejected due to insufficient spot balance.
  * - `"oracleRejected"`: Rejected due to price too far from oracle.
  * - `"perpMaxPositionRejected"`: Rejected due to exceeding margin tier limit at current leverage.
+ * - `"tooManyOpenOrdersRejected"`: Rejected due to exceeding the open order limit.
  */
 export type OrderProcessingStatus =
   | "open"
@@ -377,7 +406,9 @@ export type OrderProcessingStatus =
   | "siblingFilledCanceled"
   | "delistedCanceled"
   | "liquidatedCanceled"
+  | "outcomeSettledCanceled"
   | "scheduledCancel"
+  | "internalCancel"
   | "tickRejected"
   | "minTradeNtlRejected"
   | "perpMarginRejected"
@@ -392,4 +423,5 @@ export type OrderProcessingStatus =
   | "openInterestIncreaseRejected"
   | "insufficientSpotBalanceRejected"
   | "oracleRejected"
-  | "perpMaxPositionRejected";
+  | "perpMaxPositionRejected"
+  | "tooManyOpenOrdersRejected";

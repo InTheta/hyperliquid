@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-import-prefix
 
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals, assertStrictEquals } from "jsr:@std/assert@1";
 import { HttpTransport, type IRequestTransport } from "@nktkas/hyperliquid";
 import { SymbolConverter } from "@nktkas/hyperliquid/utils";
 import type { OutcomeMetaResponse } from "@nktkas/hyperliquid/api/info";
@@ -258,6 +258,38 @@ Deno.test("SymbolConverter", { ignore: OFFLINE }, async (t) => {
       assertEquals(conv.getAssetId("unit:ES"), DEX_EXPECTATIONS["unit:ES"].assetId);
     });
   });
+});
+
+Deno.test("SymbolConverter reload() deduplicates concurrent requests", async () => {
+  let requestCount = 0;
+  let releaseRequests!: () => void;
+  const requestGate = new Promise<void>((resolve) => {
+    releaseRequests = resolve;
+  });
+  const responses: Record<string, unknown> = {
+    meta: { universe: [] },
+    spotMeta: { tokens: [], universe: [] },
+    outcomeMeta: { outcomes: [], questions: [] },
+  };
+  const transport: IRequestTransport = {
+    isTestnet: false,
+    async request<T>(_endpoint: "info" | "exchange" | "explorer", payload: unknown): Promise<T> {
+      requestCount++;
+      await requestGate;
+      const { type } = payload as { type: string };
+      return responses[type] as T;
+    },
+  };
+  const converter = new SymbolConverter({ transport });
+
+  const firstReload = converter.reload();
+  const concurrentReload = converter.reload();
+
+  assertStrictEquals(concurrentReload, firstReload);
+  assertEquals(requestCount, 3);
+
+  releaseRequests();
+  await firstReload;
 });
 
 Deno.test("SymbolConverter outcome markets", async (t) => {
