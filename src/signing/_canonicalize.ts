@@ -3,8 +3,8 @@
  * @module
  */
 
-import type { GenericSchema } from "@valibot/valibot";
-import { HyperliquidError } from "../_base.ts";
+import type { GenericSchema } from "valibot";
+import { HyperliquidError } from "../_base.js";
 
 /** Thrown when canonicalization fails due to schema/data key mismatch. */
 export class CanonicalizeError extends HyperliquidError {

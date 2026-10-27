@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { InfoConfig } from "./_methods/_base/mod.ts";
+import type { InfoConfig } from "./_methods/_base/mod.js";
 
 // ============================================================
 // Methods Imports
@@ -13,200 +13,200 @@ import {
   activeAssetData,
   type ActiveAssetDataParameters,
   type ActiveAssetDataResponse,
-} from "./_methods/activeAssetData.ts";
+} from "./_methods/activeAssetData.js";
 import {
   allBorrowLendReserveStates,
   type AllBorrowLendReserveStatesResponse,
-} from "./_methods/allBorrowLendReserveStates.ts";
-import { allMids, type AllMidsParameters, type AllMidsResponse } from "./_methods/allMids.ts";
-import { allPerpMetas, type AllPerpMetasResponse } from "./_methods/allPerpMetas.ts";
+} from "./_methods/allBorrowLendReserveStates.js";
+import { allMids, type AllMidsParameters, type AllMidsResponse } from "./_methods/allMids.js";
+import { allPerpMetas, type AllPerpMetasResponse } from "./_methods/allPerpMetas.js";
 import {
   approvedBuilders,
   type ApprovedBuildersParameters,
   type ApprovedBuildersResponse,
-} from "./_methods/approvedBuilders.ts";
+} from "./_methods/approvedBuilders.js";
 import {
   borrowLendReserveState,
   type BorrowLendReserveStateParameters,
   type BorrowLendReserveStateResponse,
-} from "./_methods/borrowLendReserveState.ts";
+} from "./_methods/borrowLendReserveState.js";
 import {
   borrowLendUserState,
   type BorrowLendUserStateParameters,
   type BorrowLendUserStateResponse,
-} from "./_methods/borrowLendUserState.ts";
+} from "./_methods/borrowLendUserState.js";
 import {
   candleSnapshot,
   type CandleSnapshotParameters,
   type CandleSnapshotResponse,
-} from "./_methods/candleSnapshot.ts";
+} from "./_methods/candleSnapshot.js";
 import {
   clearinghouseState,
   type ClearinghouseStateParameters,
   type ClearinghouseStateResponse,
-} from "./_methods/clearinghouseState.ts";
-import { delegations, type DelegationsParameters, type DelegationsResponse } from "./_methods/delegations.ts";
+} from "./_methods/clearinghouseState.js";
+import { delegations, type DelegationsParameters, type DelegationsResponse } from "./_methods/delegations.js";
 import {
   delegatorHistory,
   type DelegatorHistoryParameters,
   type DelegatorHistoryResponse,
-} from "./_methods/delegatorHistory.ts";
+} from "./_methods/delegatorHistory.js";
 import {
   delegatorRewards,
   type DelegatorRewardsParameters,
   type DelegatorRewardsResponse,
-} from "./_methods/delegatorRewards.ts";
+} from "./_methods/delegatorRewards.js";
 import {
   delegatorSummary,
   type DelegatorSummaryParameters,
   type DelegatorSummaryResponse,
-} from "./_methods/delegatorSummary.ts";
-import { exchangeStatus, type ExchangeStatusResponse } from "./_methods/exchangeStatus.ts";
-import { extraAgents, type ExtraAgentsParameters, type ExtraAgentsResponse } from "./_methods/extraAgents.ts";
+} from "./_methods/delegatorSummary.js";
+import { exchangeStatus, type ExchangeStatusResponse } from "./_methods/exchangeStatus.js";
+import { extraAgents, type ExtraAgentsParameters, type ExtraAgentsResponse } from "./_methods/extraAgents.js";
 import {
   frontendOpenOrders,
   type FrontendOpenOrdersParameters,
   type FrontendOpenOrdersResponse,
-} from "./_methods/frontendOpenOrders.ts";
+} from "./_methods/frontendOpenOrders.js";
 import {
   fundingHistory,
   type FundingHistoryParameters,
   type FundingHistoryResponse,
-} from "./_methods/fundingHistory.ts";
+} from "./_methods/fundingHistory.js";
 import {
   gossipPriorityAuctionStatus,
   type GossipPriorityAuctionStatusResponse,
-} from "./_methods/gossipPriorityAuctionStatus.ts";
-import { gossipRootIps, type GossipRootIpsResponse } from "./_methods/gossipRootIps.ts";
+} from "./_methods/gossipPriorityAuctionStatus.js";
+import { gossipRootIps, type GossipRootIpsResponse } from "./_methods/gossipRootIps.js";
 import {
   historicalOrders,
   type HistoricalOrdersParameters,
   type HistoricalOrdersResponse,
-} from "./_methods/historicalOrders.ts";
-import { isVip, type IsVipParameters, type IsVipResponse } from "./_methods/isVip.ts";
-import { l2Book, type L2BookParameters, type L2BookResponse } from "./_methods/l2Book.ts";
-import { leadingVaults, type LeadingVaultsParameters, type LeadingVaultsResponse } from "./_methods/leadingVaults.ts";
-import { legalCheck, type LegalCheckParameters, type LegalCheckResponse } from "./_methods/legalCheck.ts";
-import { liquidatable, type LiquidatableResponse } from "./_methods/liquidatable.ts";
-import { marginTable, type MarginTableParameters, type MarginTableResponse } from "./_methods/marginTable.ts";
-import { maxBuilderFee, type MaxBuilderFeeParameters, type MaxBuilderFeeResponse } from "./_methods/maxBuilderFee.ts";
-import { maxMarketOrderNtls, type MaxMarketOrderNtlsResponse } from "./_methods/maxMarketOrderNtls.ts";
-import { meta, type MetaParameters, type MetaResponse } from "./_methods/meta.ts";
+} from "./_methods/historicalOrders.js";
+import { isVip, type IsVipParameters, type IsVipResponse } from "./_methods/isVip.js";
+import { l2Book, type L2BookParameters, type L2BookResponse } from "./_methods/l2Book.js";
+import { leadingVaults, type LeadingVaultsParameters, type LeadingVaultsResponse } from "./_methods/leadingVaults.js";
+import { legalCheck, type LegalCheckParameters, type LegalCheckResponse } from "./_methods/legalCheck.js";
+import { liquidatable, type LiquidatableResponse } from "./_methods/liquidatable.js";
+import { marginTable, type MarginTableParameters, type MarginTableResponse } from "./_methods/marginTable.js";
+import { maxBuilderFee, type MaxBuilderFeeParameters, type MaxBuilderFeeResponse } from "./_methods/maxBuilderFee.js";
+import { maxMarketOrderNtls, type MaxMarketOrderNtlsResponse } from "./_methods/maxMarketOrderNtls.js";
+import { meta, type MetaParameters, type MetaResponse } from "./_methods/meta.js";
 import {
   metaAndAssetCtxs,
   type MetaAndAssetCtxsParameters,
   type MetaAndAssetCtxsResponse,
-} from "./_methods/metaAndAssetCtxs.ts";
-import { openOrders, type OpenOrdersParameters, type OpenOrdersResponse } from "./_methods/openOrders.ts";
-import { orderStatus, type OrderStatusParameters, type OrderStatusResponse } from "./_methods/orderStatus.ts";
-import { outcomeMeta, type OutcomeMetaResponse } from "./_methods/outcomeMeta.ts";
-import { outcomeTemplates, type OutcomeTemplatesResponse } from "./_methods/outcomeTemplates.ts";
+} from "./_methods/metaAndAssetCtxs.js";
+import { openOrders, type OpenOrdersParameters, type OpenOrdersResponse } from "./_methods/openOrders.js";
+import { orderStatus, type OrderStatusParameters, type OrderStatusResponse } from "./_methods/orderStatus.js";
+import { outcomeMeta, type OutcomeMetaResponse } from "./_methods/outcomeMeta.js";
+import { outcomeTemplates, type OutcomeTemplatesResponse } from "./_methods/outcomeTemplates.js";
 import {
   perpAnnotation,
   type PerpAnnotationParameters,
   type PerpAnnotationResponse,
-} from "./_methods/perpAnnotation.ts";
-import { perpCategories, type PerpCategoriesResponse } from "./_methods/perpCategories.ts";
-import { perpConciseAnnotations, type PerpConciseAnnotationsResponse } from "./_methods/perpConciseAnnotations.ts";
-import { perpDeployAuctionStatus, type PerpDeployAuctionStatusResponse } from "./_methods/perpDeployAuctionStatus.ts";
-import { perpDexLimits, type PerpDexLimitsParameters, type PerpDexLimitsResponse } from "./_methods/perpDexLimits.ts";
-import { perpDexs, type PerpDexsResponse } from "./_methods/perpDexs.ts";
-import { perpDexStatus, type PerpDexStatusParameters, type PerpDexStatusResponse } from "./_methods/perpDexStatus.ts";
+} from "./_methods/perpAnnotation.js";
+import { perpCategories, type PerpCategoriesResponse } from "./_methods/perpCategories.js";
+import { perpConciseAnnotations, type PerpConciseAnnotationsResponse } from "./_methods/perpConciseAnnotations.js";
+import { perpDeployAuctionStatus, type PerpDeployAuctionStatusResponse } from "./_methods/perpDeployAuctionStatus.js";
+import { perpDexLimits, type PerpDexLimitsParameters, type PerpDexLimitsResponse } from "./_methods/perpDexLimits.js";
+import { perpDexs, type PerpDexsResponse } from "./_methods/perpDexs.js";
+import { perpDexStatus, type PerpDexStatusParameters, type PerpDexStatusResponse } from "./_methods/perpDexStatus.js";
 import {
   perpsAtOpenInterestCap,
   type PerpsAtOpenInterestCapParameters,
   type PerpsAtOpenInterestCapResponse,
-} from "./_methods/perpsAtOpenInterestCap.ts";
-import { portfolio, type PortfolioParameters, type PortfolioResponse } from "./_methods/portfolio.ts";
-import { predictedFundings, type PredictedFundingsResponse } from "./_methods/predictedFundings.ts";
+} from "./_methods/perpsAtOpenInterestCap.js";
+import { portfolio, type PortfolioParameters, type PortfolioResponse } from "./_methods/portfolio.js";
+import { predictedFundings, type PredictedFundingsResponse } from "./_methods/predictedFundings.js";
 import {
   preTransferCheck,
   type PreTransferCheckParameters,
   type PreTransferCheckResponse,
-} from "./_methods/preTransferCheck.ts";
-import { recentTrades, type RecentTradesParameters, type RecentTradesResponse } from "./_methods/recentTrades.ts";
-import { referral, type ReferralParameters, type ReferralResponse } from "./_methods/referral.ts";
+} from "./_methods/preTransferCheck.js";
+import { recentTrades, type RecentTradesParameters, type RecentTradesResponse } from "./_methods/recentTrades.js";
+import { referral, type ReferralParameters, type ReferralResponse } from "./_methods/referral.js";
 import {
   settledOutcome,
   type SettledOutcomeParameters,
   type SettledOutcomeResponse,
-} from "./_methods/settledOutcome.ts";
+} from "./_methods/settledOutcome.js";
 import {
   spotClearinghouseState,
   type SpotClearinghouseStateParameters,
   type SpotClearinghouseStateResponse,
-} from "./_methods/spotClearinghouseState.ts";
+} from "./_methods/spotClearinghouseState.js";
 import {
   spotDeployState,
   type SpotDeployStateParameters,
   type SpotDeployStateResponse,
-} from "./_methods/spotDeployState.ts";
-import { spotMeta, type SpotMetaResponse } from "./_methods/spotMeta.ts";
-import { spotMetaAndAssetCtxs, type SpotMetaAndAssetCtxsResponse } from "./_methods/spotMetaAndAssetCtxs.ts";
+} from "./_methods/spotDeployState.js";
+import { spotMeta, type SpotMetaResponse } from "./_methods/spotMeta.js";
+import { spotMetaAndAssetCtxs, type SpotMetaAndAssetCtxsResponse } from "./_methods/spotMetaAndAssetCtxs.js";
 import {
   spotPairDeployAuctionStatus,
   type SpotPairDeployAuctionStatusResponse,
-} from "./_methods/spotPairDeployAuctionStatus.ts";
-import { subAccounts, type SubAccountsParameters, type SubAccountsResponse } from "./_methods/subAccounts.ts";
-import { subAccounts2, type SubAccounts2Parameters, type SubAccounts2Response } from "./_methods/subAccounts2.ts";
-import { tokenDetails, type TokenDetailsParameters, type TokenDetailsResponse } from "./_methods/tokenDetails.ts";
-import { twapHistory, type TwapHistoryParameters, type TwapHistoryResponse } from "./_methods/twapHistory.ts";
-import { usdcRouting, type UsdcRoutingResponse } from "./_methods/usdcRouting.ts";
+} from "./_methods/spotPairDeployAuctionStatus.js";
+import { subAccounts, type SubAccountsParameters, type SubAccountsResponse } from "./_methods/subAccounts.js";
+import { subAccounts2, type SubAccounts2Parameters, type SubAccounts2Response } from "./_methods/subAccounts2.js";
+import { tokenDetails, type TokenDetailsParameters, type TokenDetailsResponse } from "./_methods/tokenDetails.js";
+import { twapHistory, type TwapHistoryParameters, type TwapHistoryResponse } from "./_methods/twapHistory.js";
+import { usdcRouting, type UsdcRoutingResponse } from "./_methods/usdcRouting.js";
 import {
   userAbstraction,
   type UserAbstractionParameters,
   type UserAbstractionResponse,
-} from "./_methods/userAbstraction.ts";
+} from "./_methods/userAbstraction.js";
 import {
   userBorrowLendInterest,
   type UserBorrowLendInterestParameters,
   type UserBorrowLendInterestResponse,
-} from "./_methods/userBorrowLendInterest.ts";
+} from "./_methods/userBorrowLendInterest.js";
 import {
   userDexAbstraction,
   type UserDexAbstractionParameters,
   type UserDexAbstractionResponse,
-} from "./_methods/userDexAbstraction.ts";
-import { userFees, type UserFeesParameters, type UserFeesResponse } from "./_methods/userFees.ts";
-import { userFills, type UserFillsParameters, type UserFillsResponse } from "./_methods/userFills.ts";
+} from "./_methods/userDexAbstraction.js";
+import { userFees, type UserFeesParameters, type UserFeesResponse } from "./_methods/userFees.js";
+import { userFills, type UserFillsParameters, type UserFillsResponse } from "./_methods/userFills.js";
 import {
   userFillsByTime,
   type UserFillsByTimeParameters,
   type UserFillsByTimeResponse,
-} from "./_methods/userFillsByTime.ts";
-import { userFunding, type UserFundingParameters, type UserFundingResponse } from "./_methods/userFunding.ts";
+} from "./_methods/userFillsByTime.js";
+import { userFunding, type UserFundingParameters, type UserFundingResponse } from "./_methods/userFunding.js";
 import {
   userNonFundingLedgerUpdates,
   type UserNonFundingLedgerUpdatesParameters,
   type UserNonFundingLedgerUpdatesResponse,
-} from "./_methods/userNonFundingLedgerUpdates.ts";
-import { userRateLimit, type UserRateLimitParameters, type UserRateLimitResponse } from "./_methods/userRateLimit.ts";
-import { userRole, type UserRoleParameters, type UserRoleResponse } from "./_methods/userRole.ts";
+} from "./_methods/userNonFundingLedgerUpdates.js";
+import { userRateLimit, type UserRateLimitParameters, type UserRateLimitResponse } from "./_methods/userRateLimit.js";
+import { userRole, type UserRoleParameters, type UserRoleResponse } from "./_methods/userRole.js";
 import {
   userToMultiSigSigners,
   type UserToMultiSigSignersParameters,
   type UserToMultiSigSignersResponse,
-} from "./_methods/userToMultiSigSigners.ts";
+} from "./_methods/userToMultiSigSigners.js";
 import {
   userTwapSliceFills,
   type UserTwapSliceFillsParameters,
   type UserTwapSliceFillsResponse,
-} from "./_methods/userTwapSliceFills.ts";
+} from "./_methods/userTwapSliceFills.js";
 import {
   userTwapSliceFillsByTime,
   type UserTwapSliceFillsByTimeParameters,
   type UserTwapSliceFillsByTimeResponse,
-} from "./_methods/userTwapSliceFillsByTime.ts";
+} from "./_methods/userTwapSliceFillsByTime.js";
 import {
   userVaultEquities,
   type UserVaultEquitiesParameters,
   type UserVaultEquitiesResponse,
-} from "./_methods/userVaultEquities.ts";
-import { validatorL1Votes, type ValidatorL1VotesResponse } from "./_methods/validatorL1Votes.ts";
-import { validatorSummaries, type ValidatorSummariesResponse } from "./_methods/validatorSummaries.ts";
-import { vaultDetails, type VaultDetailsParameters, type VaultDetailsResponse } from "./_methods/vaultDetails.ts";
-import { vaultSummaries, type VaultSummariesResponse } from "./_methods/vaultSummaries.ts";
-import { webData2, type WebData2Parameters, type WebData2Response } from "./_methods/webData2.ts";
+} from "./_methods/userVaultEquities.js";
+import { validatorL1Votes, type ValidatorL1VotesResponse } from "./_methods/validatorL1Votes.js";
+import { validatorSummaries, type ValidatorSummariesResponse } from "./_methods/validatorSummaries.js";
+import { vaultDetails, type VaultDetailsParameters, type VaultDetailsResponse } from "./_methods/vaultDetails.js";
+import { vaultSummaries, type VaultSummariesResponse } from "./_methods/vaultSummaries.js";
+import { webData2, type WebData2Parameters, type WebData2Response } from "./_methods/webData2.js";
 
 // ============================================================
 // Client
@@ -2488,106 +2488,106 @@ export class InfoClient<C extends InfoConfig = InfoConfig> {
 // Type Re-exports
 // ============================================================
 
-export type { InfoConfig } from "./_methods/_base/mod.ts";
+export type { InfoConfig } from "./_methods/_base/mod.js";
 
-export type { ActiveAssetDataParameters, ActiveAssetDataResponse } from "./_methods/activeAssetData.ts";
-export type { AllBorrowLendReserveStatesResponse } from "./_methods/allBorrowLendReserveStates.ts";
-export type { AllMidsParameters, AllMidsResponse } from "./_methods/allMids.ts";
-export type { AllPerpMetasResponse } from "./_methods/allPerpMetas.ts";
-export type { ApprovedBuildersParameters, ApprovedBuildersResponse } from "./_methods/approvedBuilders.ts";
+export type { ActiveAssetDataParameters, ActiveAssetDataResponse } from "./_methods/activeAssetData.js";
+export type { AllBorrowLendReserveStatesResponse } from "./_methods/allBorrowLendReserveStates.js";
+export type { AllMidsParameters, AllMidsResponse } from "./_methods/allMids.js";
+export type { AllPerpMetasResponse } from "./_methods/allPerpMetas.js";
+export type { ApprovedBuildersParameters, ApprovedBuildersResponse } from "./_methods/approvedBuilders.js";
 export type {
   BorrowLendReserveStateParameters,
   BorrowLendReserveStateResponse,
-} from "./_methods/borrowLendReserveState.ts";
-export type { BorrowLendUserStateParameters, BorrowLendUserStateResponse } from "./_methods/borrowLendUserState.ts";
-export type { CandleSnapshotParameters, CandleSnapshotResponse } from "./_methods/candleSnapshot.ts";
-export type { ClearinghouseStateParameters, ClearinghouseStateResponse } from "./_methods/clearinghouseState.ts";
-export type { DelegationsParameters, DelegationsResponse } from "./_methods/delegations.ts";
-export type { DelegatorHistoryParameters, DelegatorHistoryResponse } from "./_methods/delegatorHistory.ts";
-export type { DelegatorRewardsParameters, DelegatorRewardsResponse } from "./_methods/delegatorRewards.ts";
-export type { DelegatorSummaryParameters, DelegatorSummaryResponse } from "./_methods/delegatorSummary.ts";
-export type { ExchangeStatusResponse } from "./_methods/exchangeStatus.ts";
-export type { ExtraAgentsParameters, ExtraAgentsResponse } from "./_methods/extraAgents.ts";
-export type { FrontendOpenOrdersParameters, FrontendOpenOrdersResponse } from "./_methods/frontendOpenOrders.ts";
-export type { FundingHistoryParameters, FundingHistoryResponse } from "./_methods/fundingHistory.ts";
-export type { GossipPriorityAuctionStatusResponse } from "./_methods/gossipPriorityAuctionStatus.ts";
-export type { GossipRootIpsResponse } from "./_methods/gossipRootIps.ts";
-export type { HistoricalOrdersParameters, HistoricalOrdersResponse } from "./_methods/historicalOrders.ts";
-export type { IsVipParameters, IsVipResponse } from "./_methods/isVip.ts";
-export type { L2BookParameters, L2BookResponse } from "./_methods/l2Book.ts";
-export type { LeadingVaultsParameters, LeadingVaultsResponse } from "./_methods/leadingVaults.ts";
-export type { LegalCheckParameters, LegalCheckResponse } from "./_methods/legalCheck.ts";
-export type { LiquidatableResponse } from "./_methods/liquidatable.ts";
-export type { MarginTableParameters, MarginTableResponse } from "./_methods/marginTable.ts";
-export type { MaxBuilderFeeParameters, MaxBuilderFeeResponse } from "./_methods/maxBuilderFee.ts";
-export type { MaxMarketOrderNtlsResponse } from "./_methods/maxMarketOrderNtls.ts";
-export type { MetaParameters, MetaResponse } from "./_methods/meta.ts";
-export type { MetaAndAssetCtxsParameters, MetaAndAssetCtxsResponse } from "./_methods/metaAndAssetCtxs.ts";
-export type { OpenOrdersParameters, OpenOrdersResponse } from "./_methods/openOrders.ts";
-export type { OrderStatusParameters, OrderStatusResponse } from "./_methods/orderStatus.ts";
-export type { OutcomeMetaResponse } from "./_methods/outcomeMeta.ts";
-export type { OutcomeTemplatesResponse } from "./_methods/outcomeTemplates.ts";
-export type { PerpAnnotationParameters, PerpAnnotationResponse } from "./_methods/perpAnnotation.ts";
-export type { PerpCategoriesResponse } from "./_methods/perpCategories.ts";
-export type { PerpConciseAnnotationsResponse } from "./_methods/perpConciseAnnotations.ts";
-export type { PerpDeployAuctionStatusResponse } from "./_methods/perpDeployAuctionStatus.ts";
-export type { PerpDexLimitsParameters, PerpDexLimitsResponse } from "./_methods/perpDexLimits.ts";
-export type { PerpDexsResponse } from "./_methods/perpDexs.ts";
-export type { PerpDexStatusParameters, PerpDexStatusResponse } from "./_methods/perpDexStatus.ts";
+} from "./_methods/borrowLendReserveState.js";
+export type { BorrowLendUserStateParameters, BorrowLendUserStateResponse } from "./_methods/borrowLendUserState.js";
+export type { CandleSnapshotParameters, CandleSnapshotResponse } from "./_methods/candleSnapshot.js";
+export type { ClearinghouseStateParameters, ClearinghouseStateResponse } from "./_methods/clearinghouseState.js";
+export type { DelegationsParameters, DelegationsResponse } from "./_methods/delegations.js";
+export type { DelegatorHistoryParameters, DelegatorHistoryResponse } from "./_methods/delegatorHistory.js";
+export type { DelegatorRewardsParameters, DelegatorRewardsResponse } from "./_methods/delegatorRewards.js";
+export type { DelegatorSummaryParameters, DelegatorSummaryResponse } from "./_methods/delegatorSummary.js";
+export type { ExchangeStatusResponse } from "./_methods/exchangeStatus.js";
+export type { ExtraAgentsParameters, ExtraAgentsResponse } from "./_methods/extraAgents.js";
+export type { FrontendOpenOrdersParameters, FrontendOpenOrdersResponse } from "./_methods/frontendOpenOrders.js";
+export type { FundingHistoryParameters, FundingHistoryResponse } from "./_methods/fundingHistory.js";
+export type { GossipPriorityAuctionStatusResponse } from "./_methods/gossipPriorityAuctionStatus.js";
+export type { GossipRootIpsResponse } from "./_methods/gossipRootIps.js";
+export type { HistoricalOrdersParameters, HistoricalOrdersResponse } from "./_methods/historicalOrders.js";
+export type { IsVipParameters, IsVipResponse } from "./_methods/isVip.js";
+export type { L2BookParameters, L2BookResponse } from "./_methods/l2Book.js";
+export type { LeadingVaultsParameters, LeadingVaultsResponse } from "./_methods/leadingVaults.js";
+export type { LegalCheckParameters, LegalCheckResponse } from "./_methods/legalCheck.js";
+export type { LiquidatableResponse } from "./_methods/liquidatable.js";
+export type { MarginTableParameters, MarginTableResponse } from "./_methods/marginTable.js";
+export type { MaxBuilderFeeParameters, MaxBuilderFeeResponse } from "./_methods/maxBuilderFee.js";
+export type { MaxMarketOrderNtlsResponse } from "./_methods/maxMarketOrderNtls.js";
+export type { MetaParameters, MetaResponse } from "./_methods/meta.js";
+export type { MetaAndAssetCtxsParameters, MetaAndAssetCtxsResponse } from "./_methods/metaAndAssetCtxs.js";
+export type { OpenOrdersParameters, OpenOrdersResponse } from "./_methods/openOrders.js";
+export type { OrderStatusParameters, OrderStatusResponse } from "./_methods/orderStatus.js";
+export type { OutcomeMetaResponse } from "./_methods/outcomeMeta.js";
+export type { OutcomeTemplatesResponse } from "./_methods/outcomeTemplates.js";
+export type { PerpAnnotationParameters, PerpAnnotationResponse } from "./_methods/perpAnnotation.js";
+export type { PerpCategoriesResponse } from "./_methods/perpCategories.js";
+export type { PerpConciseAnnotationsResponse } from "./_methods/perpConciseAnnotations.js";
+export type { PerpDeployAuctionStatusResponse } from "./_methods/perpDeployAuctionStatus.js";
+export type { PerpDexLimitsParameters, PerpDexLimitsResponse } from "./_methods/perpDexLimits.js";
+export type { PerpDexsResponse } from "./_methods/perpDexs.js";
+export type { PerpDexStatusParameters, PerpDexStatusResponse } from "./_methods/perpDexStatus.js";
 export type {
   PerpsAtOpenInterestCapParameters,
   PerpsAtOpenInterestCapResponse,
-} from "./_methods/perpsAtOpenInterestCap.ts";
-export type { PortfolioParameters, PortfolioResponse } from "./_methods/portfolio.ts";
-export type { PredictedFundingsResponse } from "./_methods/predictedFundings.ts";
-export type { PreTransferCheckParameters, PreTransferCheckResponse } from "./_methods/preTransferCheck.ts";
-export type { RecentTradesParameters, RecentTradesResponse } from "./_methods/recentTrades.ts";
-export type { ReferralParameters, ReferralResponse } from "./_methods/referral.ts";
-export type { SettledOutcomeParameters, SettledOutcomeResponse } from "./_methods/settledOutcome.ts";
+} from "./_methods/perpsAtOpenInterestCap.js";
+export type { PortfolioParameters, PortfolioResponse } from "./_methods/portfolio.js";
+export type { PredictedFundingsResponse } from "./_methods/predictedFundings.js";
+export type { PreTransferCheckParameters, PreTransferCheckResponse } from "./_methods/preTransferCheck.js";
+export type { RecentTradesParameters, RecentTradesResponse } from "./_methods/recentTrades.js";
+export type { ReferralParameters, ReferralResponse } from "./_methods/referral.js";
+export type { SettledOutcomeParameters, SettledOutcomeResponse } from "./_methods/settledOutcome.js";
 export type {
   SpotClearinghouseStateParameters,
   SpotClearinghouseStateResponse,
-} from "./_methods/spotClearinghouseState.ts";
-export type { SpotDeployStateParameters, SpotDeployStateResponse } from "./_methods/spotDeployState.ts";
-export type { SpotMetaResponse } from "./_methods/spotMeta.ts";
-export type { SpotMetaAndAssetCtxsResponse } from "./_methods/spotMetaAndAssetCtxs.ts";
-export type { SpotPairDeployAuctionStatusResponse } from "./_methods/spotPairDeployAuctionStatus.ts";
-export type { SubAccountsParameters, SubAccountsResponse } from "./_methods/subAccounts.ts";
-export type { SubAccounts2Parameters, SubAccounts2Response } from "./_methods/subAccounts2.ts";
-export type { TokenDetailsParameters, TokenDetailsResponse } from "./_methods/tokenDetails.ts";
-export type { TwapHistoryParameters, TwapHistoryResponse } from "./_methods/twapHistory.ts";
-export type { UsdcRoutingResponse } from "./_methods/usdcRouting.ts";
-export type { UserAbstractionParameters, UserAbstractionResponse } from "./_methods/userAbstraction.ts";
+} from "./_methods/spotClearinghouseState.js";
+export type { SpotDeployStateParameters, SpotDeployStateResponse } from "./_methods/spotDeployState.js";
+export type { SpotMetaResponse } from "./_methods/spotMeta.js";
+export type { SpotMetaAndAssetCtxsResponse } from "./_methods/spotMetaAndAssetCtxs.js";
+export type { SpotPairDeployAuctionStatusResponse } from "./_methods/spotPairDeployAuctionStatus.js";
+export type { SubAccountsParameters, SubAccountsResponse } from "./_methods/subAccounts.js";
+export type { SubAccounts2Parameters, SubAccounts2Response } from "./_methods/subAccounts2.js";
+export type { TokenDetailsParameters, TokenDetailsResponse } from "./_methods/tokenDetails.js";
+export type { TwapHistoryParameters, TwapHistoryResponse } from "./_methods/twapHistory.js";
+export type { UsdcRoutingResponse } from "./_methods/usdcRouting.js";
+export type { UserAbstractionParameters, UserAbstractionResponse } from "./_methods/userAbstraction.js";
 export type {
   UserBorrowLendInterestParameters,
   UserBorrowLendInterestResponse,
-} from "./_methods/userBorrowLendInterest.ts";
+} from "./_methods/userBorrowLendInterest.js";
 export type {
   UserDexAbstractionParameters as UserDexAbstractionInfoParameters,
   UserDexAbstractionResponse as UserDexAbstractionInfoResponse,
-} from "./_methods/userDexAbstraction.ts";
-export type { UserFeesParameters, UserFeesResponse } from "./_methods/userFees.ts";
-export type { UserFillsParameters, UserFillsResponse } from "./_methods/userFills.ts";
-export type { UserFillsByTimeParameters, UserFillsByTimeResponse } from "./_methods/userFillsByTime.ts";
-export type { UserFundingParameters, UserFundingResponse } from "./_methods/userFunding.ts";
+} from "./_methods/userDexAbstraction.js";
+export type { UserFeesParameters, UserFeesResponse } from "./_methods/userFees.js";
+export type { UserFillsParameters, UserFillsResponse } from "./_methods/userFills.js";
+export type { UserFillsByTimeParameters, UserFillsByTimeResponse } from "./_methods/userFillsByTime.js";
+export type { UserFundingParameters, UserFundingResponse } from "./_methods/userFunding.js";
 export type {
   UserNonFundingLedgerUpdatesParameters,
   UserNonFundingLedgerUpdatesResponse,
-} from "./_methods/userNonFundingLedgerUpdates.ts";
-export type { UserRateLimitParameters, UserRateLimitResponse } from "./_methods/userRateLimit.ts";
-export type { UserRoleParameters, UserRoleResponse } from "./_methods/userRole.ts";
+} from "./_methods/userNonFundingLedgerUpdates.js";
+export type { UserRateLimitParameters, UserRateLimitResponse } from "./_methods/userRateLimit.js";
+export type { UserRoleParameters, UserRoleResponse } from "./_methods/userRole.js";
 export type {
   UserToMultiSigSignersParameters,
   UserToMultiSigSignersResponse,
-} from "./_methods/userToMultiSigSigners.ts";
-export type { UserTwapSliceFillsParameters, UserTwapSliceFillsResponse } from "./_methods/userTwapSliceFills.ts";
+} from "./_methods/userToMultiSigSigners.js";
+export type { UserTwapSliceFillsParameters, UserTwapSliceFillsResponse } from "./_methods/userTwapSliceFills.js";
 export type {
   UserTwapSliceFillsByTimeParameters,
   UserTwapSliceFillsByTimeResponse,
-} from "./_methods/userTwapSliceFillsByTime.ts";
-export type { UserVaultEquitiesParameters, UserVaultEquitiesResponse } from "./_methods/userVaultEquities.ts";
-export type { ValidatorL1VotesResponse } from "./_methods/validatorL1Votes.ts";
-export type { ValidatorSummariesResponse } from "./_methods/validatorSummaries.ts";
-export type { VaultDetailsParameters, VaultDetailsResponse } from "./_methods/vaultDetails.ts";
-export type { VaultSummariesResponse } from "./_methods/vaultSummaries.ts";
-export type { WebData2Parameters, WebData2Response } from "./_methods/webData2.ts";
+} from "./_methods/userTwapSliceFillsByTime.js";
+export type { UserVaultEquitiesParameters, UserVaultEquitiesResponse } from "./_methods/userVaultEquities.js";
+export type { ValidatorL1VotesResponse } from "./_methods/validatorL1Votes.js";
+export type { ValidatorSummariesResponse } from "./_methods/validatorSummaries.js";
+export type { VaultDetailsParameters, VaultDetailsResponse } from "./_methods/vaultDetails.js";
+export type { VaultSummariesResponse } from "./_methods/vaultSummaries.js";
+export type { WebData2Parameters, WebData2Response } from "./_methods/webData2.js";

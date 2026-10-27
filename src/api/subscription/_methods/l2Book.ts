@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
@@ -72,9 +72,9 @@ export type L2BookEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode l2Book} function. */
 export type L2BookParameters = Omit<v.InferInput<typeof L2BookRequest>, "type">;

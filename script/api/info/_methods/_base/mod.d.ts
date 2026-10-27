@@ -1,0 +1,7 @@
+/**
+ * Base infrastructure for Info API methods.
+ * @module
+ */
+export type { InfoConfig } from "./_config.js";
+export * from "./_schemas.js";
+//# sourceMappingURL=mod.d.ts.map

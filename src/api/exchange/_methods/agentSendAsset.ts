@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.ts";
+import { Address, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Transfer tokens on behalf of the principal via an agent wallet.
@@ -79,15 +79,15 @@ export type AgentSendAssetResponse =
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import { canonicalize } from "../../../signing/mod.ts";
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
 import {
   type ExchangeConfig,
   type ExcludeErrorResponse,
   executeL1Action,
   type ExtractRequestOptions,
-} from "./_base/mod.ts";
-import { globalNonceManager } from "./_base/_nonce.ts";
+} from "./_base/mod.js";
+import { globalNonceManager } from "./_base/_nonce.js";
 
 /** Schema for action fields (excludes request-level system fields). */
 const AgentSendAssetActionSchema = /* @__PURE__ */ (() => {

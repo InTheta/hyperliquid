@@ -5,7 +5,7 @@
  */
 
 import { Decimal } from "decimal.js";
-import { HyperliquidError } from "../_base.ts";
+import { HyperliquidError } from "../_base.js";
 
 /**
  * Thrown when a price or size value cannot be formatted to a valid decimal.

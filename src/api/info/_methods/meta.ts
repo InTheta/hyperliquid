@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { MarginTableResponse } from "./marginTable.ts";
+import type { MarginTableResponse } from "./marginTable.js";
 
 /**
  * Request trading metadata.
@@ -65,8 +65,8 @@ export type MetaResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode meta} function. */
 export type MetaParameters = Omit<v.InferInput<typeof MetaRequest>, "type">;

@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { PerpDeployAuctionStatusResponse } from "./perpDeployAuctionStatus.ts";
+import type { PerpDeployAuctionStatusResponse } from "./perpDeployAuctionStatus.js";
 
 /**
  * Request gossip priority auction status (previous winners and current auctions).
@@ -38,8 +38,8 @@ export type GossipPriorityAuctionStatusResponse = [
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request gossip priority auction status (previous winners and current auctions).

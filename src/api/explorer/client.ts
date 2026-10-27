@@ -3,18 +3,18 @@
  * @module
  */
 
-import type { IRequestTransport, ISubscription, ISubscriptionTransport, TransportError } from "../../transport/mod.ts";
-import type { ExplorerConfig } from "./_methods/_base/mod.ts";
+import type { IRequestTransport, ISubscription, ISubscriptionTransport, TransportError } from "../../transport/mod.js";
+import type { ExplorerConfig } from "./_methods/_base/mod.js";
 
 // ============================================================
 // Methods Imports
 // ============================================================
 
-import { blockDetails, type BlockDetailsParameters, type BlockDetailsResponse } from "./_methods/blockDetails.ts";
-import { explorerBlock, type ExplorerBlockEvent } from "./_methods/explorerBlock.ts";
-import { explorerTxs, type ExplorerTxsEvent } from "./_methods/explorerTxs.ts";
-import { txDetails, type TxDetailsParameters, type TxDetailsResponse } from "./_methods/txDetails.ts";
-import { userDetails, type UserDetailsParameters, type UserDetailsResponse } from "./_methods/userDetails.ts";
+import { blockDetails, type BlockDetailsParameters, type BlockDetailsResponse } from "./_methods/blockDetails.js";
+import { explorerBlock, type ExplorerBlockEvent } from "./_methods/explorerBlock.js";
+import { explorerTxs, type ExplorerTxsEvent } from "./_methods/explorerTxs.js";
+import { txDetails, type TxDetailsParameters, type TxDetailsResponse } from "./_methods/txDetails.js";
+import { userDetails, type UserDetailsParameters, type UserDetailsResponse } from "./_methods/userDetails.js";
 
 // ============================================================
 // Client
@@ -213,10 +213,10 @@ export class ExplorerClient<
 // Type Re-exports
 // ============================================================
 
-export type { ExplorerConfig } from "./_methods/_base/mod.ts";
+export type { ExplorerConfig } from "./_methods/_base/mod.js";
 
-export type { BlockDetailsParameters, BlockDetailsResponse } from "./_methods/blockDetails.ts";
-export type { ExplorerBlockEvent } from "./_methods/explorerBlock.ts";
-export type { ExplorerTxsEvent } from "./_methods/explorerTxs.ts";
-export type { TxDetailsParameters, TxDetailsResponse } from "./_methods/txDetails.ts";
-export type { UserDetailsParameters, UserDetailsResponse } from "./_methods/userDetails.ts";
+export type { BlockDetailsParameters, BlockDetailsResponse } from "./_methods/blockDetails.js";
+export type { ExplorerBlockEvent } from "./_methods/explorerBlock.js";
+export type { ExplorerTxsEvent } from "./_methods/explorerTxs.js";
+export type { TxDetailsParameters, TxDetailsResponse } from "./_methods/txDetails.js";
+export type { UserDetailsParameters, UserDetailsResponse } from "./_methods/userDetails.js";

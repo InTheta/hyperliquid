@@ -24,6 +24,6 @@
  * @module
  */
 
-export * from "./_symbolConverter.ts";
-export * from "./_marketCache.ts";
-export * from "./_format.ts";
+export * from "./_symbolConverter.js";
+export * from "./_marketCache.js";
+export * from "./_format.js";

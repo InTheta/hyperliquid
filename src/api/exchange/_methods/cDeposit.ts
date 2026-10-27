@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Hex, UnsignedInteger } from "../../_schemas.ts";
+import { Hex, UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Transfer native token from the user spot account into staking for delegating to validators.
@@ -65,14 +65,14 @@ export type CDepositResponse =
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import { canonicalize } from "../../../signing/mod.ts";
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
 import {
   type ExchangeConfig,
   type ExcludeErrorResponse,
   executeUserSignedAction,
   type ExtractRequestOptions,
-} from "./_base/mod.ts";
+} from "./_base/mod.js";
 
 /** Schema for action fields (excludes request-level system fields). */
 const CDepositActionSchema = /* @__PURE__ */ (() => {

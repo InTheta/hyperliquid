@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { PerpAssetCtx } from "./_base/mod.ts";
-import type { MetaResponse } from "./meta.ts";
+import type { PerpAssetCtx } from "./_base/mod.js";
+import type { MetaResponse } from "./meta.js";
 
 /**
  * Request metadata and asset contexts.
@@ -36,8 +36,8 @@ export type MetaAndAssetCtxsResponse = [
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode metaAndAssetCtxs} function. */
 export type MetaAndAssetCtxsParameters = Omit<v.InferInput<typeof MetaAndAssetCtxsRequest>, "type">;

@@ -1,0 +1,46 @@
+"use strict";
+/**
+ * Keep-alive watchdog for the WebSocket connection: pings the server on an
+ * interval and reconnects when a ping stays unanswered.
+ *
+ * @module
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WebSocketKeepAlive = void 0;
+/** Pings the server while the connection is open and reconnects when a ping stays unanswered. */
+class WebSocketKeepAlive {
+    _socket;
+    _interval;
+    _timeout;
+    _pingInterval;
+    _pongTimeout;
+    constructor(socket, hlEvents, options) {
+        this._socket = socket;
+        this._interval = options?.interval ?? 30_000;
+        this._timeout = options?.timeout ?? 10_000;
+        hlEvents.addEventListener("pong", () => this._disarm());
+        socket.addEventListener("open", () => this._start());
+        socket.addEventListener("close", () => this._stop());
+        socket.addEventListener("error", () => this._stop());
+    }
+    _start() {
+        if (this._pingInterval)
+            return;
+        this._pingInterval = setInterval(() => {
+            this._socket.send('{"method":"ping"}');
+            // A half-open connection never answers: reconnect once a ping stays unanswered.
+            this._pongTimeout ??= setTimeout(() => this._socket.reconnect(), this._timeout);
+        }, this._interval);
+    }
+    _stop() {
+        clearInterval(this._pingInterval);
+        this._pingInterval = undefined;
+        this._disarm();
+    }
+    _disarm() {
+        clearTimeout(this._pongTimeout);
+        this._pongTimeout = undefined;
+    }
+}
+exports.WebSocketKeepAlive = WebSocketKeepAlive;
+//# sourceMappingURL=_keepAlive.js.map

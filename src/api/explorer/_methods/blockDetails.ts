@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { UnsignedInteger } from "../../_schemas.ts";
-import type { ExplorerTransaction } from "./_base/mod.ts";
+import { UnsignedInteger } from "../../_schemas.js";
+import type { ExplorerTransaction } from "./_base/mod.js";
 
 /**
  * Request block details by block height.
@@ -55,9 +55,9 @@ export type BlockDetailsResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { IRequestTransport } from "../../../transport/mod.ts";
-import { assertSuccessResponse, type ExplorerConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { IRequestTransport } from "../../../transport/mod.js";
+import { assertSuccessResponse, type ExplorerConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode blockDetails} function. */
 export type BlockDetailsParameters = Omit<v.InferInput<typeof BlockDetailsRequest>, "type">;

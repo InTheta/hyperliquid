@@ -5,12 +5,12 @@
  * @module
  */
 
-import { ReconnectingWebSocket } from "@nktkas/rews";
-import * as abort from "../_abort.ts";
-import { TransportError } from "../_base.ts";
-import { Promise_ } from "../_polyfills.ts";
-import type { HyperliquidEventTarget, PostResponse, SubscribeUnsubscribeResponse } from "./_events.ts";
-import { isSubset, requestToId, specificity } from "./_id.ts";
+import { ReconnectingWebSocket } from "../../deps/jsr.io/@nktkas/rews/4.1.0/mod.js";
+import * as abort from "../_abort.js";
+import { TransportError } from "../_base.js";
+import { Promise_ } from "../_polyfills.js";
+import type { HyperliquidEventTarget, PostResponse, SubscribeUnsubscribeResponse } from "./_events.js";
+import { isSubset, requestToId, specificity } from "./_id.js";
 
 // =============================================================================
 // Errors

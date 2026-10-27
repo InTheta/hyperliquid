@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
+import { Address } from "../../_schemas.js";
 
 /**
  * Request user active asset data.
@@ -88,8 +88,8 @@ export type ActiveAssetDataResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode activeAssetData} function. */
 export type ActiveAssetDataParameters = Omit<v.InferInput<typeof ActiveAssetDataRequest>, "type">;

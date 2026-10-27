@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { WebData2Response } from "../../info/_methods/webData2.ts";
+import { Address } from "../../_schemas.js";
+import type { WebData2Response } from "../../info/_methods/webData2.js";
 
 /**
  * Backward-compatible subscription to comprehensive user and market data.
@@ -28,9 +28,9 @@ export type WebData2Event = WebData2Response;
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode webData2} function. */
 export type WebData2Parameters = Omit<v.InferInput<typeof WebData2Request>, "type">;

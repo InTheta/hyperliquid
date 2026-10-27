@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { IRequestTransport, ISubscriptionTransport } from "../../../../transport/mod.ts";
+import type { IRequestTransport, ISubscriptionTransport } from "../../../../transport/mod.js";
 
 /** Configuration for Explorer API requests. */
 export interface ExplorerConfig<

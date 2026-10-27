@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { UnsignedInteger } from "../../_schemas.ts";
+import { UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Request information about a settled outcome.
@@ -76,8 +76,8 @@ export type SettledOutcomeResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode settledOutcome} function. */
 export type SettledOutcomeParameters = Omit<v.InferInput<typeof SettledOutcomeRequest>, "type">;

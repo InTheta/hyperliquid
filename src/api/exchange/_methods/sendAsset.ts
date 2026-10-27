@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.ts";
+import { Address, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Transfer tokens between different perp DEXs, spot balance, users, and/or sub-accounts.
@@ -81,14 +81,14 @@ export type SendAssetResponse =
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import { canonicalize } from "../../../signing/mod.ts";
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
 import {
   type ExchangeConfig,
   type ExcludeErrorResponse,
   executeUserSignedAction,
   type ExtractRequestOptions,
-} from "./_base/mod.ts";
+} from "./_base/mod.js";
 
 /** Schema for action fields (excludes request-level system fields). */
 const SendAssetActionSchema = /* @__PURE__ */ (() => {

@@ -1,0 +1,8 @@
+/**
+ * Base infrastructure for Explorer API methods.
+ * @module
+ */
+export type { ExplorerConfig } from "./_config.js";
+export { ApiRequestError, assertSuccessResponse } from "./_errors.js";
+export * from "./_schemas.js";
+//# sourceMappingURL=mod.d.ts.map

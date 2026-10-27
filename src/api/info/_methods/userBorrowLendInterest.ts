@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, UnsignedInteger } from "../../_schemas.ts";
+import { Address, UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Request user borrow/lend interest.
@@ -49,8 +49,8 @@ export type UserBorrowLendInterestResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userBorrowLendInterest} function. */
 export type UserBorrowLendInterestParameters = Omit<v.InferInput<typeof UserBorrowLendInterestRequest>, "type">;

@@ -5,12 +5,12 @@
  * @module
  */
 
-import { ReconnectingWebSocket } from "@nktkas/rews";
-import * as abort from "../_abort.ts";
-import type { ISubscription } from "../_base.ts";
-import type { HyperliquidEventTarget } from "./_events.ts";
-import { WebSocketDispatcher, WebSocketRequestError } from "./_dispatcher.ts";
-import { requestToId } from "./_id.ts";
+import { ReconnectingWebSocket } from "../../deps/jsr.io/@nktkas/rews/4.1.0/mod.js";
+import * as abort from "../_abort.js";
+import type { ISubscription } from "../_base.js";
+import type { HyperliquidEventTarget } from "./_events.js";
+import { WebSocketDispatcher, WebSocketRequestError } from "./_dispatcher.js";
+import { requestToId } from "./_id.js";
 
 /** Per-listener registration: its unsubscribe handle and optional error callback. */
 interface ListenerRegistration {

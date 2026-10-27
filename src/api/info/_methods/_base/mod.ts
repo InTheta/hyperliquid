@@ -3,5 +3,5 @@
  * @module
  */
 
-export type { InfoConfig } from "./_config.ts";
-export * from "./_schemas.ts";
+export type { InfoConfig } from "./_config.js";
+export * from "./_schemas.js";

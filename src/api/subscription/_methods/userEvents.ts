@@ -1,13 +1,13 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { TwapHistoryResponse } from "../../info/_methods/twapHistory.ts";
-import type { UserFillsResponse } from "../../info/_methods/userFills.ts";
-import type { UserTwapSliceFillsResponse } from "../../info/_methods/userTwapSliceFills.ts";
+import { Address } from "../../_schemas.js";
+import type { TwapHistoryResponse } from "../../info/_methods/twapHistory.js";
+import type { UserFillsResponse } from "../../info/_methods/userFills.js";
+import type { UserTwapSliceFillsResponse } from "../../info/_methods/userTwapSliceFills.js";
 
 /**
  * Subscription to user events for a specific user.
@@ -107,9 +107,9 @@ export type UserEventsEvent =
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userEvents} function. */
 export type UserEventsParameters = Omit<v.InferInput<typeof UserEventsRequest>, "type">;

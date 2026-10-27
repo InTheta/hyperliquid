@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { ExchangeConfig, ExchangeSingleWalletConfig } from "./_methods/_base/mod.ts";
+import type { ExchangeConfig, ExchangeSingleWalletConfig } from "./_methods/_base/mod.js";
 
 // ============================================================
 // Methods Imports
@@ -14,329 +14,329 @@ import {
   type ActivateOutcomeDeployerOptions,
   type ActivateOutcomeDeployerParameters,
   type ActivateOutcomeDeployerSuccessResponse,
-} from "./_methods/activateOutcomeDeployer.ts";
+} from "./_methods/activateOutcomeDeployer.js";
 import {
   agentEnableDexAbstraction,
   type AgentEnableDexAbstractionOptions,
   type AgentEnableDexAbstractionSuccessResponse,
-} from "./_methods/agentEnableDexAbstraction.ts";
+} from "./_methods/agentEnableDexAbstraction.js";
 import {
   agentSendAsset,
   type AgentSendAssetOptions,
   type AgentSendAssetParameters,
   type AgentSendAssetSuccessResponse,
-} from "./_methods/agentSendAsset.ts";
+} from "./_methods/agentSendAsset.js";
 import {
   agentSetAbstraction,
   type AgentSetAbstractionOptions,
   type AgentSetAbstractionParameters,
   type AgentSetAbstractionSuccessResponse,
-} from "./_methods/agentSetAbstraction.ts";
+} from "./_methods/agentSetAbstraction.js";
 import {
   approveAgent,
   type ApproveAgentOptions,
   type ApproveAgentParameters,
   type ApproveAgentSuccessResponse,
-} from "./_methods/approveAgent.ts";
+} from "./_methods/approveAgent.js";
 import {
   approveBuilderFee,
   type ApproveBuilderFeeOptions,
   type ApproveBuilderFeeParameters,
   type ApproveBuilderFeeSuccessResponse,
-} from "./_methods/approveBuilderFee.ts";
+} from "./_methods/approveBuilderFee.js";
 import {
   authorizeAqav2Role,
   type AuthorizeAqav2RoleOptions,
   type AuthorizeAqav2RoleParameters,
   type AuthorizeAqav2RoleSuccessResponse,
-} from "./_methods/authorizeAqav2Role.ts";
+} from "./_methods/authorizeAqav2Role.js";
 import {
   batchModify,
   type BatchModifyOptions,
   type BatchModifyParameters,
   type BatchModifySuccessResponse,
-} from "./_methods/batchModify.ts";
+} from "./_methods/batchModify.js";
 import {
   borrowLend,
   type BorrowLendOptions,
   type BorrowLendParameters,
   type BorrowLendSuccessResponse,
-} from "./_methods/borrowLend.ts";
-import { cancel, type CancelOptions, type CancelParameters, type CancelSuccessResponse } from "./_methods/cancel.ts";
+} from "./_methods/borrowLend.js";
+import { cancel, type CancelOptions, type CancelParameters, type CancelSuccessResponse } from "./_methods/cancel.js";
 import {
   cancelByCloid,
   type CancelByCloidOptions,
   type CancelByCloidParameters,
   type CancelByCloidSuccessResponse,
-} from "./_methods/cancelByCloid.ts";
+} from "./_methods/cancelByCloid.js";
 import {
   cDeposit,
   type CDepositOptions,
   type CDepositParameters,
   type CDepositSuccessResponse,
-} from "./_methods/cDeposit.ts";
-import { claimRewards, type ClaimRewardsOptions, type ClaimRewardsSuccessResponse } from "./_methods/claimRewards.ts";
+} from "./_methods/cDeposit.js";
+import { claimRewards, type ClaimRewardsOptions, type ClaimRewardsSuccessResponse } from "./_methods/claimRewards.js";
 import {
   convertToMultiSigUser,
   type ConvertToMultiSigUserOptions,
   type ConvertToMultiSigUserParameters,
   type ConvertToMultiSigUserSuccessResponse,
-} from "./_methods/convertToMultiSigUser.ts";
+} from "./_methods/convertToMultiSigUser.js";
 import {
   createSubAccount,
   type CreateSubAccountOptions,
   type CreateSubAccountParameters,
   type CreateSubAccountSuccessResponse,
-} from "./_methods/createSubAccount.ts";
+} from "./_methods/createSubAccount.js";
 import {
   createVault,
   type CreateVaultOptions,
   type CreateVaultParameters,
   type CreateVaultSuccessResponse,
-} from "./_methods/createVault.ts";
+} from "./_methods/createVault.js";
 import {
   cSignerAction,
   type CSignerActionOptions,
   type CSignerActionParameters,
   type CSignerActionSuccessResponse,
-} from "./_methods/cSignerAction.ts";
+} from "./_methods/cSignerAction.js";
 import {
   cValidatorAction,
   type CValidatorActionOptions,
   type CValidatorActionParameters,
   type CValidatorActionSuccessResponse,
-} from "./_methods/cValidatorAction.ts";
+} from "./_methods/cValidatorAction.js";
 import {
   cWithdraw,
   type CWithdrawOptions,
   type CWithdrawParameters,
   type CWithdrawSuccessResponse,
-} from "./_methods/cWithdraw.ts";
+} from "./_methods/cWithdraw.js";
 import {
   evmUserModify,
   type EvmUserModifyOptions,
   type EvmUserModifyParameters,
   type EvmUserModifySuccessResponse,
-} from "./_methods/evmUserModify.ts";
+} from "./_methods/evmUserModify.js";
 import {
   finalizeEvmContract,
   type FinalizeEvmContractOptions,
   type FinalizeEvmContractParameters,
   type FinalizeEvmContractSuccessResponse,
-} from "./_methods/finalizeEvmContract.ts";
+} from "./_methods/finalizeEvmContract.js";
 import {
   gossipPriorityBid,
   type GossipPriorityBidOptions,
   type GossipPriorityBidParameters,
   type GossipPriorityBidSuccessResponse,
-} from "./_methods/gossipPriorityBid.ts";
+} from "./_methods/gossipPriorityBid.js";
 import {
   hip3LiquidatorTransfer,
   type Hip3LiquidatorTransferOptions,
   type Hip3LiquidatorTransferParameters,
   type Hip3LiquidatorTransferSuccessResponse,
-} from "./_methods/hip3LiquidatorTransfer.ts";
+} from "./_methods/hip3LiquidatorTransfer.js";
 import {
   linkStakingUser,
   type LinkStakingUserOptions,
   type LinkStakingUserParameters,
   type LinkStakingUserSuccessResponse,
-} from "./_methods/linkStakingUser.ts";
-import { modify, type ModifyOptions, type ModifyParameters, type ModifySuccessResponse } from "./_methods/modify.ts";
-import { noop, type NoopOptions, type NoopParameters, type NoopSuccessResponse } from "./_methods/noop.ts";
-import { order, type OrderOptions, type OrderParameters, type OrderSuccessResponse } from "./_methods/order.ts";
+} from "./_methods/linkStakingUser.js";
+import { modify, type ModifyOptions, type ModifyParameters, type ModifySuccessResponse } from "./_methods/modify.js";
+import { noop, type NoopOptions, type NoopParameters, type NoopSuccessResponse } from "./_methods/noop.js";
+import { order, type OrderOptions, type OrderParameters, type OrderSuccessResponse } from "./_methods/order.js";
 import {
   perpDeploy,
   type PerpDeployOptions,
   type PerpDeployParameters,
   type PerpDeploySuccessResponse,
-} from "./_methods/perpDeploy.ts";
+} from "./_methods/perpDeploy.js";
 import {
   registerReferrer,
   type RegisterReferrerOptions,
   type RegisterReferrerParameters,
   type RegisterReferrerSuccessResponse,
-} from "./_methods/registerReferrer.ts";
+} from "./_methods/registerReferrer.js";
 import {
   reserveRequestWeight,
   type ReserveRequestWeightOptions,
   type ReserveRequestWeightParameters,
   type ReserveRequestWeightSuccessResponse,
-} from "./_methods/reserveRequestWeight.ts";
+} from "./_methods/reserveRequestWeight.js";
 import {
   scheduleCancel,
   type ScheduleCancelOptions,
   type ScheduleCancelParameters,
   type ScheduleCancelSuccessResponse,
-} from "./_methods/scheduleCancel.ts";
+} from "./_methods/scheduleCancel.js";
 import {
   sendAsset,
   type SendAssetOptions,
   type SendAssetParameters,
   type SendAssetSuccessResponse,
-} from "./_methods/sendAsset.ts";
+} from "./_methods/sendAsset.js";
 import {
   sendToEvmWithData,
   type SendToEvmWithDataOptions,
   type SendToEvmWithDataParameters,
   type SendToEvmWithDataSuccessResponse,
-} from "./_methods/sendToEvmWithData.ts";
+} from "./_methods/sendToEvmWithData.js";
 import {
   setDisplayName,
   type SetDisplayNameOptions,
   type SetDisplayNameParameters,
   type SetDisplayNameSuccessResponse,
-} from "./_methods/setDisplayName.ts";
+} from "./_methods/setDisplayName.js";
 import {
   setReferrer,
   type SetReferrerOptions,
   type SetReferrerParameters,
   type SetReferrerSuccessResponse,
-} from "./_methods/setReferrer.ts";
+} from "./_methods/setReferrer.js";
 import {
   spotDeploy,
   type SpotDeployOptions,
   type SpotDeployParameters,
   type SpotDeploySuccessResponse,
-} from "./_methods/spotDeploy.ts";
+} from "./_methods/spotDeploy.js";
 import {
   spotSend,
   type SpotSendOptions,
   type SpotSendParameters,
   type SpotSendSuccessResponse,
-} from "./_methods/spotSend.ts";
+} from "./_methods/spotSend.js";
 import {
   spotUser,
   type SpotUserOptions,
   type SpotUserParameters,
   type SpotUserSuccessResponse,
-} from "./_methods/spotUser.ts";
+} from "./_methods/spotUser.js";
 import {
   stakingLinkDisableTradingUser,
   type StakingLinkDisableTradingUserOptions,
   type StakingLinkDisableTradingUserParameters,
   type StakingLinkDisableTradingUserSuccessResponse,
-} from "./_methods/stakingLinkDisableTradingUser.ts";
+} from "./_methods/stakingLinkDisableTradingUser.js";
 import {
   subAccountModify,
   type SubAccountModifyOptions,
   type SubAccountModifyParameters,
   type SubAccountModifySuccessResponse,
-} from "./_methods/subAccountModify.ts";
+} from "./_methods/subAccountModify.js";
 import {
   subAccountSpotTransfer,
   type SubAccountSpotTransferOptions,
   type SubAccountSpotTransferParameters,
   type SubAccountSpotTransferSuccessResponse,
-} from "./_methods/subAccountSpotTransfer.ts";
+} from "./_methods/subAccountSpotTransfer.js";
 import {
   subAccountTransfer,
   type SubAccountTransferOptions,
   type SubAccountTransferParameters,
   type SubAccountTransferSuccessResponse,
-} from "./_methods/subAccountTransfer.ts";
+} from "./_methods/subAccountTransfer.js";
 import {
   tokenDelegate,
   type TokenDelegateOptions,
   type TokenDelegateParameters,
   type TokenDelegateSuccessResponse,
-} from "./_methods/tokenDelegate.ts";
+} from "./_methods/tokenDelegate.js";
 import {
   topUpIsolatedOnlyMargin,
   type TopUpIsolatedOnlyMarginOptions,
   type TopUpIsolatedOnlyMarginParameters,
   type TopUpIsolatedOnlyMarginSuccessResponse,
-} from "./_methods/topUpIsolatedOnlyMargin.ts";
+} from "./_methods/topUpIsolatedOnlyMargin.js";
 import {
   twapCancel,
   type TwapCancelOptions,
   type TwapCancelParameters,
   type TwapCancelSuccessResponse,
-} from "./_methods/twapCancel.ts";
+} from "./_methods/twapCancel.js";
 import {
   twapOrder,
   type TwapOrderOptions,
   type TwapOrderParameters,
   type TwapOrderSuccessResponse,
-} from "./_methods/twapOrder.ts";
+} from "./_methods/twapOrder.js";
 import {
   updateIsolatedMargin,
   type UpdateIsolatedMarginOptions,
   type UpdateIsolatedMarginParameters,
   type UpdateIsolatedMarginSuccessResponse,
-} from "./_methods/updateIsolatedMargin.ts";
+} from "./_methods/updateIsolatedMargin.js";
 import {
   updateLeverage,
   type UpdateLeverageOptions,
   type UpdateLeverageParameters,
   type UpdateLeverageSuccessResponse,
-} from "./_methods/updateLeverage.ts";
+} from "./_methods/updateLeverage.js";
 import {
   usdClassTransfer,
   type UsdClassTransferOptions,
   type UsdClassTransferParameters,
   type UsdClassTransferSuccessResponse,
-} from "./_methods/usdClassTransfer.ts";
+} from "./_methods/usdClassTransfer.js";
 import {
   usdSend,
   type UsdSendOptions,
   type UsdSendParameters,
   type UsdSendSuccessResponse,
-} from "./_methods/usdSend.ts";
+} from "./_methods/usdSend.js";
 import {
   userDexAbstraction,
   type UserDexAbstractionOptions,
   type UserDexAbstractionParameters,
   type UserDexAbstractionSuccessResponse,
-} from "./_methods/userDexAbstraction.ts";
+} from "./_methods/userDexAbstraction.js";
 import {
   userOutcome,
   type UserOutcomeOptions,
   type UserOutcomeParameters,
   type UserOutcomeSuccessResponse,
-} from "./_methods/userOutcome.ts";
+} from "./_methods/userOutcome.js";
 import {
   userPortfolioMargin,
   type UserPortfolioMarginOptions,
   type UserPortfolioMarginParameters,
   type UserPortfolioMarginSuccessResponse,
-} from "./_methods/userPortfolioMargin.ts";
+} from "./_methods/userPortfolioMargin.js";
 import {
   userSetAbstraction,
   type UserSetAbstractionOptions,
   type UserSetAbstractionParameters,
   type UserSetAbstractionSuccessResponse,
-} from "./_methods/userSetAbstraction.ts";
+} from "./_methods/userSetAbstraction.js";
 import {
   validatorL1Stream,
   type ValidatorL1StreamOptions,
   type ValidatorL1StreamParameters,
   type ValidatorL1StreamSuccessResponse,
-} from "./_methods/validatorL1Stream.ts";
+} from "./_methods/validatorL1Stream.js";
 import {
   vaultDistribute,
   type VaultDistributeOptions,
   type VaultDistributeParameters,
   type VaultDistributeSuccessResponse,
-} from "./_methods/vaultDistribute.ts";
+} from "./_methods/vaultDistribute.js";
 import {
   vaultModify,
   type VaultModifyOptions,
   type VaultModifyParameters,
   type VaultModifySuccessResponse,
-} from "./_methods/vaultModify.ts";
+} from "./_methods/vaultModify.js";
 import {
   vaultTransfer,
   type VaultTransferOptions,
   type VaultTransferParameters,
   type VaultTransferSuccessResponse,
-} from "./_methods/vaultTransfer.ts";
+} from "./_methods/vaultTransfer.js";
 import {
   withdraw3,
   type Withdraw3Options,
   type Withdraw3Parameters,
   type Withdraw3SuccessResponse,
-} from "./_methods/withdraw3.ts";
+} from "./_methods/withdraw3.js";
 
 // ============================================================
 // Client
@@ -2626,181 +2626,181 @@ export {
   type ExchangeConfig,
   type ExchangeMultiSigConfig,
   type ExchangeSingleWalletConfig,
-} from "./_methods/_base/mod.ts";
+} from "./_methods/_base/mod.js";
 
 export type {
   ActivateOutcomeDeployerOptions,
   ActivateOutcomeDeployerParameters,
   ActivateOutcomeDeployerSuccessResponse,
-} from "./_methods/activateOutcomeDeployer.ts";
+} from "./_methods/activateOutcomeDeployer.js";
 export type {
   AgentEnableDexAbstractionOptions,
   AgentEnableDexAbstractionSuccessResponse,
-} from "./_methods/agentEnableDexAbstraction.ts";
+} from "./_methods/agentEnableDexAbstraction.js";
 export type {
   AgentSendAssetOptions,
   AgentSendAssetParameters,
   AgentSendAssetSuccessResponse,
-} from "./_methods/agentSendAsset.ts";
+} from "./_methods/agentSendAsset.js";
 export type {
   AgentSetAbstractionOptions,
   AgentSetAbstractionParameters,
   AgentSetAbstractionSuccessResponse,
-} from "./_methods/agentSetAbstraction.ts";
+} from "./_methods/agentSetAbstraction.js";
 export type {
   ApproveAgentOptions,
   ApproveAgentParameters,
   ApproveAgentSuccessResponse,
-} from "./_methods/approveAgent.ts";
+} from "./_methods/approveAgent.js";
 export type {
   ApproveBuilderFeeOptions,
   ApproveBuilderFeeParameters,
   ApproveBuilderFeeSuccessResponse,
-} from "./_methods/approveBuilderFee.ts";
+} from "./_methods/approveBuilderFee.js";
 export type {
   AuthorizeAqav2RoleOptions,
   AuthorizeAqav2RoleParameters,
   AuthorizeAqav2RoleSuccessResponse,
-} from "./_methods/authorizeAqav2Role.ts";
-export type { BatchModifyOptions, BatchModifyParameters, BatchModifySuccessResponse } from "./_methods/batchModify.ts";
-export type { BorrowLendOptions, BorrowLendParameters, BorrowLendSuccessResponse } from "./_methods/borrowLend.ts";
-export type { CancelOptions, CancelParameters, CancelSuccessResponse } from "./_methods/cancel.ts";
+} from "./_methods/authorizeAqav2Role.js";
+export type { BatchModifyOptions, BatchModifyParameters, BatchModifySuccessResponse } from "./_methods/batchModify.js";
+export type { BorrowLendOptions, BorrowLendParameters, BorrowLendSuccessResponse } from "./_methods/borrowLend.js";
+export type { CancelOptions, CancelParameters, CancelSuccessResponse } from "./_methods/cancel.js";
 export type {
   CancelByCloidOptions,
   CancelByCloidParameters,
   CancelByCloidSuccessResponse,
-} from "./_methods/cancelByCloid.ts";
-export type { CDepositOptions, CDepositParameters, CDepositSuccessResponse } from "./_methods/cDeposit.ts";
-export type { ClaimRewardsOptions, ClaimRewardsSuccessResponse } from "./_methods/claimRewards.ts";
+} from "./_methods/cancelByCloid.js";
+export type { CDepositOptions, CDepositParameters, CDepositSuccessResponse } from "./_methods/cDeposit.js";
+export type { ClaimRewardsOptions, ClaimRewardsSuccessResponse } from "./_methods/claimRewards.js";
 export type {
   ConvertToMultiSigUserOptions,
   ConvertToMultiSigUserParameters,
   ConvertToMultiSigUserSuccessResponse,
-} from "./_methods/convertToMultiSigUser.ts";
+} from "./_methods/convertToMultiSigUser.js";
 export type {
   CreateSubAccountOptions,
   CreateSubAccountParameters,
   CreateSubAccountSuccessResponse,
-} from "./_methods/createSubAccount.ts";
-export type { CreateVaultOptions, CreateVaultParameters, CreateVaultSuccessResponse } from "./_methods/createVault.ts";
+} from "./_methods/createSubAccount.js";
+export type { CreateVaultOptions, CreateVaultParameters, CreateVaultSuccessResponse } from "./_methods/createVault.js";
 export type {
   CSignerActionOptions,
   CSignerActionParameters,
   CSignerActionSuccessResponse,
-} from "./_methods/cSignerAction.ts";
+} from "./_methods/cSignerAction.js";
 export type {
   CValidatorActionOptions,
   CValidatorActionParameters,
   CValidatorActionSuccessResponse,
-} from "./_methods/cValidatorAction.ts";
-export type { CWithdrawOptions, CWithdrawParameters, CWithdrawSuccessResponse } from "./_methods/cWithdraw.ts";
+} from "./_methods/cValidatorAction.js";
+export type { CWithdrawOptions, CWithdrawParameters, CWithdrawSuccessResponse } from "./_methods/cWithdraw.js";
 export type {
   EvmUserModifyOptions,
   EvmUserModifyParameters,
   EvmUserModifySuccessResponse,
-} from "./_methods/evmUserModify.ts";
+} from "./_methods/evmUserModify.js";
 export type {
   FinalizeEvmContractOptions,
   FinalizeEvmContractParameters,
   FinalizeEvmContractSuccessResponse,
-} from "./_methods/finalizeEvmContract.ts";
+} from "./_methods/finalizeEvmContract.js";
 export type {
   GossipPriorityBidOptions,
   GossipPriorityBidParameters,
   GossipPriorityBidSuccessResponse,
-} from "./_methods/gossipPriorityBid.ts";
+} from "./_methods/gossipPriorityBid.js";
 export type {
   Hip3LiquidatorTransferOptions,
   Hip3LiquidatorTransferParameters,
   Hip3LiquidatorTransferSuccessResponse,
-} from "./_methods/hip3LiquidatorTransfer.ts";
+} from "./_methods/hip3LiquidatorTransfer.js";
 export type {
   LinkStakingUserOptions,
   LinkStakingUserParameters,
   LinkStakingUserSuccessResponse,
-} from "./_methods/linkStakingUser.ts";
-export type { ModifyOptions, ModifyParameters, ModifySuccessResponse } from "./_methods/modify.ts";
-export type { NoopOptions, NoopParameters, NoopSuccessResponse } from "./_methods/noop.ts";
-export type { OrderOptions, OrderParameters, OrderSuccessResponse } from "./_methods/order.ts";
-export type { PerpDeployOptions, PerpDeployParameters, PerpDeploySuccessResponse } from "./_methods/perpDeploy.ts";
+} from "./_methods/linkStakingUser.js";
+export type { ModifyOptions, ModifyParameters, ModifySuccessResponse } from "./_methods/modify.js";
+export type { NoopOptions, NoopParameters, NoopSuccessResponse } from "./_methods/noop.js";
+export type { OrderOptions, OrderParameters, OrderSuccessResponse } from "./_methods/order.js";
+export type { PerpDeployOptions, PerpDeployParameters, PerpDeploySuccessResponse } from "./_methods/perpDeploy.js";
 export type {
   RegisterReferrerOptions,
   RegisterReferrerParameters,
   RegisterReferrerSuccessResponse,
-} from "./_methods/registerReferrer.ts";
+} from "./_methods/registerReferrer.js";
 export type {
   ReserveRequestWeightOptions,
   ReserveRequestWeightParameters,
   ReserveRequestWeightSuccessResponse,
-} from "./_methods/reserveRequestWeight.ts";
+} from "./_methods/reserveRequestWeight.js";
 export type {
   ScheduleCancelOptions,
   ScheduleCancelParameters,
   ScheduleCancelSuccessResponse,
-} from "./_methods/scheduleCancel.ts";
-export type { SendAssetOptions, SendAssetParameters, SendAssetSuccessResponse } from "./_methods/sendAsset.ts";
+} from "./_methods/scheduleCancel.js";
+export type { SendAssetOptions, SendAssetParameters, SendAssetSuccessResponse } from "./_methods/sendAsset.js";
 export type {
   SendToEvmWithDataOptions,
   SendToEvmWithDataParameters,
   SendToEvmWithDataSuccessResponse,
-} from "./_methods/sendToEvmWithData.ts";
+} from "./_methods/sendToEvmWithData.js";
 export type {
   SetDisplayNameOptions,
   SetDisplayNameParameters,
   SetDisplayNameSuccessResponse,
-} from "./_methods/setDisplayName.ts";
-export type { SetReferrerOptions, SetReferrerParameters, SetReferrerSuccessResponse } from "./_methods/setReferrer.ts";
-export type { SpotDeployOptions, SpotDeployParameters, SpotDeploySuccessResponse } from "./_methods/spotDeploy.ts";
-export type { SpotSendOptions, SpotSendParameters, SpotSendSuccessResponse } from "./_methods/spotSend.ts";
-export type { SpotUserOptions, SpotUserParameters, SpotUserSuccessResponse } from "./_methods/spotUser.ts";
+} from "./_methods/setDisplayName.js";
+export type { SetReferrerOptions, SetReferrerParameters, SetReferrerSuccessResponse } from "./_methods/setReferrer.js";
+export type { SpotDeployOptions, SpotDeployParameters, SpotDeploySuccessResponse } from "./_methods/spotDeploy.js";
+export type { SpotSendOptions, SpotSendParameters, SpotSendSuccessResponse } from "./_methods/spotSend.js";
+export type { SpotUserOptions, SpotUserParameters, SpotUserSuccessResponse } from "./_methods/spotUser.js";
 export type {
   StakingLinkDisableTradingUserOptions,
   StakingLinkDisableTradingUserParameters,
   StakingLinkDisableTradingUserSuccessResponse,
-} from "./_methods/stakingLinkDisableTradingUser.ts";
+} from "./_methods/stakingLinkDisableTradingUser.js";
 export type {
   SubAccountModifyOptions,
   SubAccountModifyParameters,
   SubAccountModifySuccessResponse,
-} from "./_methods/subAccountModify.ts";
+} from "./_methods/subAccountModify.js";
 export type {
   SubAccountSpotTransferOptions,
   SubAccountSpotTransferParameters,
   SubAccountSpotTransferSuccessResponse,
-} from "./_methods/subAccountSpotTransfer.ts";
+} from "./_methods/subAccountSpotTransfer.js";
 export type {
   SubAccountTransferOptions,
   SubAccountTransferParameters,
   SubAccountTransferSuccessResponse,
-} from "./_methods/subAccountTransfer.ts";
+} from "./_methods/subAccountTransfer.js";
 export type {
   TokenDelegateOptions,
   TokenDelegateParameters,
   TokenDelegateSuccessResponse,
-} from "./_methods/tokenDelegate.ts";
+} from "./_methods/tokenDelegate.js";
 export type {
   TopUpIsolatedOnlyMarginOptions,
   TopUpIsolatedOnlyMarginParameters,
   TopUpIsolatedOnlyMarginSuccessResponse,
-} from "./_methods/topUpIsolatedOnlyMargin.ts";
-export type { TwapCancelOptions, TwapCancelParameters, TwapCancelSuccessResponse } from "./_methods/twapCancel.ts";
-export type { TwapOrderOptions, TwapOrderParameters, TwapOrderSuccessResponse } from "./_methods/twapOrder.ts";
+} from "./_methods/topUpIsolatedOnlyMargin.js";
+export type { TwapCancelOptions, TwapCancelParameters, TwapCancelSuccessResponse } from "./_methods/twapCancel.js";
+export type { TwapOrderOptions, TwapOrderParameters, TwapOrderSuccessResponse } from "./_methods/twapOrder.js";
 export type {
   UpdateIsolatedMarginOptions,
   UpdateIsolatedMarginParameters,
   UpdateIsolatedMarginSuccessResponse,
-} from "./_methods/updateIsolatedMargin.ts";
+} from "./_methods/updateIsolatedMargin.js";
 export type {
   UpdateLeverageOptions,
   UpdateLeverageParameters,
   UpdateLeverageSuccessResponse,
-} from "./_methods/updateLeverage.ts";
+} from "./_methods/updateLeverage.js";
 export type {
   UsdClassTransferOptions,
   UsdClassTransferParameters,
   UsdClassTransferSuccessResponse,
-} from "./_methods/usdClassTransfer.ts";
-export type { UsdSendOptions, UsdSendParameters, UsdSendSuccessResponse } from "./_methods/usdSend.ts";
+} from "./_methods/usdClassTransfer.js";
+export type { UsdSendOptions, UsdSendParameters, UsdSendSuccessResponse } from "./_methods/usdSend.js";
 export type {
   UserDexAbstractionOptions,
   UserDexAbstractionOptions as UserDexAbstractionExchangeOptions,
@@ -2808,32 +2808,32 @@ export type {
   UserDexAbstractionParameters as UserDexAbstractionExchangeParameters,
   UserDexAbstractionSuccessResponse,
   UserDexAbstractionSuccessResponse as UserDexAbstractionExchangeSuccessResponse,
-} from "./_methods/userDexAbstraction.ts";
-export type { UserOutcomeOptions, UserOutcomeParameters, UserOutcomeSuccessResponse } from "./_methods/userOutcome.ts";
+} from "./_methods/userDexAbstraction.js";
+export type { UserOutcomeOptions, UserOutcomeParameters, UserOutcomeSuccessResponse } from "./_methods/userOutcome.js";
 export type {
   UserPortfolioMarginOptions,
   UserPortfolioMarginParameters,
   UserPortfolioMarginSuccessResponse,
-} from "./_methods/userPortfolioMargin.ts";
+} from "./_methods/userPortfolioMargin.js";
 export type {
   UserSetAbstractionOptions,
   UserSetAbstractionParameters,
   UserSetAbstractionSuccessResponse,
-} from "./_methods/userSetAbstraction.ts";
+} from "./_methods/userSetAbstraction.js";
 export type {
   ValidatorL1StreamOptions,
   ValidatorL1StreamParameters,
   ValidatorL1StreamSuccessResponse,
-} from "./_methods/validatorL1Stream.ts";
+} from "./_methods/validatorL1Stream.js";
 export type {
   VaultDistributeOptions,
   VaultDistributeParameters,
   VaultDistributeSuccessResponse,
-} from "./_methods/vaultDistribute.ts";
-export type { VaultModifyOptions, VaultModifyParameters, VaultModifySuccessResponse } from "./_methods/vaultModify.ts";
+} from "./_methods/vaultDistribute.js";
+export type { VaultModifyOptions, VaultModifyParameters, VaultModifySuccessResponse } from "./_methods/vaultModify.js";
 export type {
   VaultTransferOptions,
   VaultTransferParameters,
   VaultTransferSuccessResponse,
-} from "./_methods/vaultTransfer.ts";
-export type { Withdraw3Options, Withdraw3Parameters, Withdraw3SuccessResponse } from "./_methods/withdraw3.ts";
+} from "./_methods/vaultTransfer.js";
+export type { Withdraw3Options, Withdraw3Parameters, Withdraw3SuccessResponse } from "./_methods/withdraw3.js";

@@ -7,8 +7,8 @@ import {
   type PerpDexsResponse,
   spotMeta,
   type SpotMetaResponse,
-} from "../api/info/mod.ts";
-import type { IRequestTransport } from "../transport/mod.ts";
+} from "../api/info/mod.js";
+import type { IRequestTransport } from "../transport/mod.js";
 
 /** Options for creating a {@link SymbolConverter} instance. */
 export interface SymbolConverterOptions {

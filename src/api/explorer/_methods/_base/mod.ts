@@ -3,6 +3,6 @@
  * @module
  */
 
-export type { ExplorerConfig } from "./_config.ts";
-export { ApiRequestError, assertSuccessResponse } from "./_errors.ts";
-export * from "./_schemas.ts";
+export type { ExplorerConfig } from "./_config.js";
+export { ApiRequestError, assertSuccessResponse } from "./_errors.js";
+export * from "./_schemas.js";

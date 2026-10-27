@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
+import { Address } from "../../_schemas.js";
 
 /**
  * Subscription to notification events for a specific user.
@@ -33,9 +33,9 @@ export type NotificationEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode notification} function. */
 export type NotificationParameters = Omit<v.InferInput<typeof NotificationRequest>, "type">;

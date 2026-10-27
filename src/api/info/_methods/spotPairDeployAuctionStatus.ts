@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { PerpDeployAuctionStatusResponse } from "./perpDeployAuctionStatus.ts";
+import type { PerpDeployAuctionStatusResponse } from "./perpDeployAuctionStatus.js";
 
 /**
  * Request for the status of the spot deploy auction.
@@ -28,8 +28,8 @@ export type SpotPairDeployAuctionStatusResponse = PerpDeployAuctionStatusRespons
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request for the status of the spot deploy auction.

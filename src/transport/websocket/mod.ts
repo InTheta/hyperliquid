@@ -21,12 +21,12 @@
  * @module
  */
 
-import { ReconnectingWebSocket, type ReconnectingWebSocketOptions } from "@nktkas/rews";
-import type { IRequestTransport, ISubscription, ISubscriptionTransport } from "../_base.ts";
-import { WebSocketDispatcher, WebSocketRequestError } from "./_dispatcher.ts";
-import { HyperliquidEventTarget } from "./_events.ts";
-import { WebSocketKeepAlive, type WebSocketKeepAliveOptions } from "./_keepAlive.ts";
-import { WebSocketSubscriptionManager } from "./_subscriptionManager.ts";
+import { ReconnectingWebSocket, type ReconnectingWebSocketOptions } from "../../deps/jsr.io/@nktkas/rews/4.1.0/mod.js";
+import type { IRequestTransport, ISubscription, ISubscriptionTransport } from "../_base.js";
+import { WebSocketDispatcher, WebSocketRequestError } from "./_dispatcher.js";
+import { HyperliquidEventTarget } from "./_events.js";
+import { WebSocketKeepAlive, type WebSocketKeepAliveOptions } from "./_keepAlive.js";
+import { WebSocketSubscriptionManager } from "./_subscriptionManager.js";
 
 export { WebSocketRequestError };
 

@@ -3,7 +3,7 @@
  * @module
  */
 
-import { HyperliquidError } from "../_base.ts";
+import { HyperliquidError } from "../_base.js";
 
 /** Thrown when the API returns an error response. */
 export class ApiRequestError extends HyperliquidError {

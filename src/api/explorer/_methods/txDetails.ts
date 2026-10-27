@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Hex } from "../../_schemas.ts";
-import type { ExplorerTransaction } from "./_base/mod.ts";
+import { Hex } from "../../_schemas.js";
+import type { ExplorerTransaction } from "./_base/mod.js";
 
 /**
  * Request transaction details by transaction hash.
@@ -36,9 +36,9 @@ export type TxDetailsResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { IRequestTransport } from "../../../transport/mod.ts";
-import { assertSuccessResponse, type ExplorerConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { IRequestTransport } from "../../../transport/mod.js";
+import { assertSuccessResponse, type ExplorerConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode txDetails} function. */
 export type TxDetailsParameters = Omit<v.InferInput<typeof TxDetailsRequest>, "type">;

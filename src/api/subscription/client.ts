@@ -3,74 +3,74 @@
  * @module
  */
 
-import type { ISubscription } from "../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_methods/_base/mod.ts";
+import type { ISubscription } from "../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_methods/_base/mod.js";
 
 // ============================================================
 // Methods Imports
 // ============================================================
 
-import { activeAssetCtx, type ActiveAssetCtxEvent, type ActiveAssetCtxParameters } from "./_methods/activeAssetCtx.ts";
+import { activeAssetCtx, type ActiveAssetCtxEvent, type ActiveAssetCtxParameters } from "./_methods/activeAssetCtx.js";
 import {
   activeAssetData,
   type ActiveAssetDataEvent,
   type ActiveAssetDataParameters,
-} from "./_methods/activeAssetData.ts";
+} from "./_methods/activeAssetData.js";
 import {
   activeSpotAssetCtx,
   type ActiveSpotAssetCtxEvent,
   type ActiveSpotAssetCtxParameters,
-} from "./_methods/activeSpotAssetCtx.ts";
-import { allDexsAssetCtxs, type AllDexsAssetCtxsEvent } from "./_methods/allDexsAssetCtxs.ts";
+} from "./_methods/activeSpotAssetCtx.js";
+import { allDexsAssetCtxs, type AllDexsAssetCtxsEvent } from "./_methods/allDexsAssetCtxs.js";
 import {
   allDexsClearinghouseState,
   type AllDexsClearinghouseStateEvent,
   type AllDexsClearinghouseStateParameters,
-} from "./_methods/allDexsClearinghouseState.ts";
-import { allMids, type AllMidsEvent, type AllMidsParameters } from "./_methods/allMids.ts";
-import { assetCtxs, type AssetCtxsEvent, type AssetCtxsParameters } from "./_methods/assetCtxs.ts";
-import { bbo, type BboEvent, type BboParameters } from "./_methods/bbo.ts";
-import { candle, type CandleEvent, type CandleParameters } from "./_methods/candle.ts";
+} from "./_methods/allDexsClearinghouseState.js";
+import { allMids, type AllMidsEvent, type AllMidsParameters } from "./_methods/allMids.js";
+import { assetCtxs, type AssetCtxsEvent, type AssetCtxsParameters } from "./_methods/assetCtxs.js";
+import { bbo, type BboEvent, type BboParameters } from "./_methods/bbo.js";
+import { candle, type CandleEvent, type CandleParameters } from "./_methods/candle.js";
 import {
   clearinghouseState,
   type ClearinghouseStateEvent,
   type ClearinghouseStateParameters,
-} from "./_methods/clearinghouseState.ts";
-import { fastAssetCtxs, type FastAssetCtxsEvent } from "./_methods/fastAssetCtxs.ts";
-import { l2Book, type L2BookEvent, type L2BookParameters } from "./_methods/l2Book.ts";
-import { notification, type NotificationEvent, type NotificationParameters } from "./_methods/notification.ts";
-import { openOrders, type OpenOrdersEvent, type OpenOrdersParameters } from "./_methods/openOrders.ts";
-import { orderUpdates, type OrderUpdatesEvent, type OrderUpdatesParameters } from "./_methods/orderUpdates.ts";
-import { outcomeMetaUpdates, type OutcomeMetaUpdatesEvent } from "./_methods/outcomeMetaUpdates.ts";
-import { spotAssetCtxs, type SpotAssetCtxsEvent } from "./_methods/spotAssetCtxs.ts";
-import { spotState, type SpotStateEvent, type SpotStateParameters } from "./_methods/spotState.ts";
-import { trades, type TradesEvent, type TradesParameters } from "./_methods/trades.ts";
-import { twapStates, type TwapStatesEvent, type TwapStatesParameters } from "./_methods/twapStates.ts";
-import { userEvents, type UserEventsEvent, type UserEventsParameters } from "./_methods/userEvents.ts";
-import { userFills, type UserFillsEvent, type UserFillsParameters } from "./_methods/userFills.ts";
-import { userFundings, type UserFundingsEvent, type UserFundingsParameters } from "./_methods/userFundings.ts";
+} from "./_methods/clearinghouseState.js";
+import { fastAssetCtxs, type FastAssetCtxsEvent } from "./_methods/fastAssetCtxs.js";
+import { l2Book, type L2BookEvent, type L2BookParameters } from "./_methods/l2Book.js";
+import { notification, type NotificationEvent, type NotificationParameters } from "./_methods/notification.js";
+import { openOrders, type OpenOrdersEvent, type OpenOrdersParameters } from "./_methods/openOrders.js";
+import { orderUpdates, type OrderUpdatesEvent, type OrderUpdatesParameters } from "./_methods/orderUpdates.js";
+import { outcomeMetaUpdates, type OutcomeMetaUpdatesEvent } from "./_methods/outcomeMetaUpdates.js";
+import { spotAssetCtxs, type SpotAssetCtxsEvent } from "./_methods/spotAssetCtxs.js";
+import { spotState, type SpotStateEvent, type SpotStateParameters } from "./_methods/spotState.js";
+import { trades, type TradesEvent, type TradesParameters } from "./_methods/trades.js";
+import { twapStates, type TwapStatesEvent, type TwapStatesParameters } from "./_methods/twapStates.js";
+import { userEvents, type UserEventsEvent, type UserEventsParameters } from "./_methods/userEvents.js";
+import { userFills, type UserFillsEvent, type UserFillsParameters } from "./_methods/userFills.js";
+import { userFundings, type UserFundingsEvent, type UserFundingsParameters } from "./_methods/userFundings.js";
 import {
   userHistoricalOrders,
   type UserHistoricalOrdersEvent,
   type UserHistoricalOrdersParameters,
-} from "./_methods/userHistoricalOrders.ts";
+} from "./_methods/userHistoricalOrders.js";
 import {
   userNonFundingLedgerUpdates,
   type UserNonFundingLedgerUpdatesEvent,
   type UserNonFundingLedgerUpdatesParameters,
-} from "./_methods/userNonFundingLedgerUpdates.ts";
+} from "./_methods/userNonFundingLedgerUpdates.js";
 import {
   userTwapHistory,
   type UserTwapHistoryEvent,
   type UserTwapHistoryParameters,
-} from "./_methods/userTwapHistory.ts";
+} from "./_methods/userTwapHistory.js";
 import {
   userTwapSliceFills,
   type UserTwapSliceFillsEvent,
   type UserTwapSliceFillsParameters,
-} from "./_methods/userTwapSliceFills.ts";
-import { webData2, type WebData2Event, type WebData2Parameters } from "./_methods/webData2.ts";
-import { webData3, type WebData3Event, type WebData3Parameters } from "./_methods/webData3.ts";
+} from "./_methods/userTwapSliceFills.js";
+import { webData2, type WebData2Event, type WebData2Parameters } from "./_methods/webData2.js";
+import { webData3, type WebData3Event, type WebData3Parameters } from "./_methods/webData3.js";
 
 // ============================================================
 // Client
@@ -1065,94 +1065,94 @@ export class SubscriptionClient<C extends SubscriptionConfig = SubscriptionConfi
 // Type Re-exports
 // ============================================================
 
-export type { SubscriptionConfig, SubscriptionOptions } from "./_methods/_base/mod.ts";
+export type { SubscriptionConfig, SubscriptionOptions } from "./_methods/_base/mod.js";
 
 export type {
   ActiveAssetCtxEvent as ActiveAssetCtxWsEvent,
   ActiveAssetCtxParameters as ActiveAssetCtxWsParameters,
-} from "./_methods/activeAssetCtx.ts";
+} from "./_methods/activeAssetCtx.js";
 export type {
   ActiveAssetDataEvent as ActiveAssetDataWsEvent,
   ActiveAssetDataParameters as ActiveAssetDataWsParameters,
-} from "./_methods/activeAssetData.ts";
+} from "./_methods/activeAssetData.js";
 export type {
   ActiveSpotAssetCtxEvent as ActiveSpotAssetCtxWsEvent,
   ActiveSpotAssetCtxParameters as ActiveSpotAssetCtxWsParameters,
-} from "./_methods/activeSpotAssetCtx.ts";
-export type { AllDexsAssetCtxsEvent as AllDexsAssetCtxsWsEvent } from "./_methods/allDexsAssetCtxs.ts";
+} from "./_methods/activeSpotAssetCtx.js";
+export type { AllDexsAssetCtxsEvent as AllDexsAssetCtxsWsEvent } from "./_methods/allDexsAssetCtxs.js";
 export type {
   AllDexsClearinghouseStateEvent as AllDexsClearinghouseStateWsEvent,
   AllDexsClearinghouseStateParameters as AllDexsClearinghouseStateWsParameters,
-} from "./_methods/allDexsClearinghouseState.ts";
-export type { AllMidsEvent as AllMidsWsEvent, AllMidsParameters as AllMidsWsParameters } from "./_methods/allMids.ts";
+} from "./_methods/allDexsClearinghouseState.js";
+export type { AllMidsEvent as AllMidsWsEvent, AllMidsParameters as AllMidsWsParameters } from "./_methods/allMids.js";
 export type {
   AssetCtxsEvent as AssetCtxsWsEvent,
   AssetCtxsParameters as AssetCtxsWsParameters,
-} from "./_methods/assetCtxs.ts";
-export type { BboEvent as BboWsEvent, BboParameters as BboWsParameters } from "./_methods/bbo.ts";
-export type { CandleEvent as CandleWsEvent, CandleParameters as CandleWsParameters } from "./_methods/candle.ts";
+} from "./_methods/assetCtxs.js";
+export type { BboEvent as BboWsEvent, BboParameters as BboWsParameters } from "./_methods/bbo.js";
+export type { CandleEvent as CandleWsEvent, CandleParameters as CandleWsParameters } from "./_methods/candle.js";
 export type {
   ClearinghouseStateEvent as ClearinghouseStateWsEvent,
   ClearinghouseStateParameters as ClearinghouseStateWsParameters,
-} from "./_methods/clearinghouseState.ts";
-export type { FastAssetCtxsEvent as FastAssetCtxsWsEvent } from "./_methods/fastAssetCtxs.ts";
-export type { L2BookEvent as L2BookWsEvent, L2BookParameters as L2BookWsParameters } from "./_methods/l2Book.ts";
+} from "./_methods/clearinghouseState.js";
+export type { FastAssetCtxsEvent as FastAssetCtxsWsEvent } from "./_methods/fastAssetCtxs.js";
+export type { L2BookEvent as L2BookWsEvent, L2BookParameters as L2BookWsParameters } from "./_methods/l2Book.js";
 export type {
   NotificationEvent as NotificationWsEvent,
   NotificationParameters as NotificationWsParameters,
-} from "./_methods/notification.ts";
+} from "./_methods/notification.js";
 export type {
   OpenOrdersEvent as OpenOrdersWsEvent,
   OpenOrdersParameters as OpenOrdersWsParameters,
-} from "./_methods/openOrders.ts";
+} from "./_methods/openOrders.js";
 export type {
   OrderUpdatesEvent as OrderUpdatesWsEvent,
   OrderUpdatesParameters as OrderUpdatesWsParameters,
-} from "./_methods/orderUpdates.ts";
-export type { OutcomeMetaUpdatesEvent as OutcomeMetaUpdatesWsEvent } from "./_methods/outcomeMetaUpdates.ts";
-export type { SpotAssetCtxsEvent as SpotAssetCtxsWsEvent } from "./_methods/spotAssetCtxs.ts";
+} from "./_methods/orderUpdates.js";
+export type { OutcomeMetaUpdatesEvent as OutcomeMetaUpdatesWsEvent } from "./_methods/outcomeMetaUpdates.js";
+export type { SpotAssetCtxsEvent as SpotAssetCtxsWsEvent } from "./_methods/spotAssetCtxs.js";
 export type {
   SpotStateEvent as SpotStateWsEvent,
   SpotStateParameters as SpotStateWsParameters,
-} from "./_methods/spotState.ts";
-export type { TradesEvent as TradesWsEvent, TradesParameters as TradesWsParameters } from "./_methods/trades.ts";
+} from "./_methods/spotState.js";
+export type { TradesEvent as TradesWsEvent, TradesParameters as TradesWsParameters } from "./_methods/trades.js";
 export type {
   TwapStatesEvent as TwapStatesWsEvent,
   TwapStatesParameters as TwapStatesWsParameters,
-} from "./_methods/twapStates.ts";
+} from "./_methods/twapStates.js";
 export type {
   UserEventsEvent as UserEventsWsEvent,
   UserEventsParameters as UserEventsWsParameters,
-} from "./_methods/userEvents.ts";
+} from "./_methods/userEvents.js";
 export type {
   UserFillsEvent as UserFillsWsEvent,
   UserFillsParameters as UserFillsWsParameters,
-} from "./_methods/userFills.ts";
+} from "./_methods/userFills.js";
 export type {
   UserFundingsEvent as UserFundingsWsEvent,
   UserFundingsParameters as UserFundingsWsParameters,
-} from "./_methods/userFundings.ts";
+} from "./_methods/userFundings.js";
 export type {
   UserHistoricalOrdersEvent as UserHistoricalOrdersWsEvent,
   UserHistoricalOrdersParameters as UserHistoricalOrdersWsParameters,
-} from "./_methods/userHistoricalOrders.ts";
+} from "./_methods/userHistoricalOrders.js";
 export type {
   UserNonFundingLedgerUpdatesEvent as UserNonFundingLedgerUpdatesWsEvent,
   UserNonFundingLedgerUpdatesParameters as UserNonFundingLedgerUpdatesWsParameters,
-} from "./_methods/userNonFundingLedgerUpdates.ts";
+} from "./_methods/userNonFundingLedgerUpdates.js";
 export type {
   UserTwapHistoryEvent as UserTwapHistoryWsEvent,
   UserTwapHistoryParameters as UserTwapHistoryWsParameters,
-} from "./_methods/userTwapHistory.ts";
+} from "./_methods/userTwapHistory.js";
 export type {
   UserTwapSliceFillsEvent as UserTwapSliceFillsWsEvent,
   UserTwapSliceFillsParameters as UserTwapSliceFillsWsParameters,
-} from "./_methods/userTwapSliceFills.ts";
+} from "./_methods/userTwapSliceFills.js";
 export type {
   WebData2Event as WebData2WsEvent,
   WebData2Parameters as WebData2WsParameters,
-} from "./_methods/webData2.ts";
+} from "./_methods/webData2.js";
 export type {
   WebData3Event as WebData3WsEvent,
   WebData3Parameters as WebData3WsParameters,
-} from "./_methods/webData3.ts";
+} from "./_methods/webData3.js";

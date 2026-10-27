@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, UnsignedInteger } from "../../_schemas.ts";
-import type { UserFillsResponse } from "./userFills.ts";
+import { Address, UnsignedInteger } from "../../_schemas.js";
+import type { UserFillsResponse } from "./userFills.js";
 
 /**
  * Request array of user fills by time.
@@ -39,8 +39,8 @@ export type UserFillsByTimeResponse = UserFillsResponse;
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userFillsByTime} function. */
 export type UserFillsByTimeParameters = Omit<v.InferInput<typeof UserFillsByTimeRequest>, "type">;

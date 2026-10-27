@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { ISubscriptionTransport, TransportError } from "../../../../transport/mod.ts";
+import type { ISubscriptionTransport, TransportError } from "../../../../transport/mod.js";
 
 /** Configuration for subscription API requests. */
 export interface SubscriptionConfig<T extends ISubscriptionTransport = ISubscriptionTransport> {

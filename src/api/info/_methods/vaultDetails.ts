@@ -1,12 +1,12 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { VaultRelationship } from "./_base/mod.ts";
-import type { PortfolioResponse } from "./portfolio.ts";
+import { Address } from "../../_schemas.js";
+import type { VaultRelationship } from "./_base/mod.js";
+import type { PortfolioResponse } from "./portfolio.js";
 
 /**
  * Request details of a vault.
@@ -127,8 +127,8 @@ export type VaultDetailsResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode vaultDetails} function. */
 export type VaultDetailsParameters = Omit<v.InferInput<typeof VaultDetailsRequest>, "type">;

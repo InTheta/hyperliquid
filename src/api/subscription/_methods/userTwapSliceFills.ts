@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { UserTwapSliceFillsResponse } from "../../info/_methods/userTwapSliceFills.ts";
+import { Address } from "../../_schemas.js";
+import type { UserTwapSliceFillsResponse } from "../../info/_methods/userTwapSliceFills.js";
 
 /**
  * Subscription to user TWAP slice fill events for a specific user.
@@ -41,9 +41,9 @@ export type UserTwapSliceFillsEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userTwapSliceFills} function. */
 export type UserTwapSliceFillsParameters = Omit<v.InferInput<typeof UserTwapSliceFillsRequest>, "type">;

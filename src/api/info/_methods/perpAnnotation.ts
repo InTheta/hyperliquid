@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
@@ -37,8 +37,8 @@ export type PerpAnnotationResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode perpAnnotation} function. */
 export type PerpAnnotationParameters = Omit<v.InferInput<typeof PerpAnnotationRequest>, "type">;

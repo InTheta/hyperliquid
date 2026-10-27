@@ -26,8 +26,8 @@
  * @module
  */
 
-import { type IRequestTransport, TransportError } from "../_base.ts";
-import * as abort from "../_abort.ts";
+import { type IRequestTransport, TransportError } from "../_base.js";
+import * as abort from "../_abort.js";
 
 /** Configuration options for the HTTP transport layer. */
 export interface HttpTransportOptions {

@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { VaultRelationship } from "./_base/mod.ts";
+import type { VaultRelationship } from "./_base/mod.js";
 
 /**
  * Request a list of vaults less than 2 hours old.
@@ -52,8 +52,8 @@ export type VaultSummariesResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request a list of vaults less than 2 hours old.

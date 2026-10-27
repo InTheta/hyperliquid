@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { PerpAssetCtx } from "../../info/_methods/_base/mod.ts";
+import type { PerpAssetCtx } from "../../info/_methods/_base/mod.js";
 
 /**
  * Subscription to asset context events for all DEXs.
@@ -36,9 +36,9 @@ export type AllDexsAssetCtxsEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /**
  * Subscribe to asset contexts for all DEXs.

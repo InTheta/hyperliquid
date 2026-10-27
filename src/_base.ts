@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 /** Base error class for all SDK errors. */
 export class HyperliquidError extends Error {

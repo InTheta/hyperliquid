@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { SpotAssetCtx } from "./_base/mod.ts";
-import type { SpotMetaResponse } from "./spotMeta.ts";
+import type { SpotAssetCtx } from "./_base/mod.js";
+import type { SpotMetaResponse } from "./spotMeta.js";
 
 /**
  * Request spot metadata and asset contexts.
@@ -34,8 +34,8 @@ export type SpotMetaAndAssetCtxsResponse = [
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request spot metadata and asset contexts.

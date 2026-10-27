@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { HistoricalOrdersResponse } from "../../info/_methods/historicalOrders.ts";
+import { Address } from "../../_schemas.js";
+import type { HistoricalOrdersResponse } from "../../info/_methods/historicalOrders.js";
 
 /**
  * Subscription to user historical orders for a specific user.
@@ -41,9 +41,9 @@ export type UserHistoricalOrdersEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userHistoricalOrders} function. */
 export type UserHistoricalOrdersParameters = Omit<v.InferInput<typeof UserHistoricalOrdersRequest>, "type">;

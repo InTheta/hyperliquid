@@ -5,8 +5,8 @@
  * @module
  */
 
-import type { ReconnectingWebSocket } from "@nktkas/rews";
-import type { HyperliquidEventTarget } from "./_events.ts";
+import type { ReconnectingWebSocket } from "../../deps/jsr.io/@nktkas/rews/4.1.0/mod.js";
+import type { HyperliquidEventTarget } from "./_events.js";
 
 /** Configuration options for the keep-alive watchdog. */
 export interface WebSocketKeepAliveOptions {

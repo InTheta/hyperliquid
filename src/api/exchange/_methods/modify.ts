@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, Cloid, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.ts";
+import { Address, Cloid, Hex, UnsignedDecimal, UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Modify an order.
@@ -118,14 +118,14 @@ export type ModifyResponse =
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import { canonicalize } from "../../../signing/mod.ts";
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
 import {
   type ExchangeConfig,
   type ExcludeErrorResponse,
   executeL1Action,
   type ExtractRequestOptions,
-} from "./_base/mod.ts";
+} from "./_base/mod.js";
 
 /** Schema for action fields (excludes request-level system fields). */
 const ModifyActionSchema = /* @__PURE__ */ (() => {

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { CustomEvent_ } from "../_polyfills.ts";
+import { CustomEvent_ } from "../_polyfills.js";
 
 /**
  * Confirmation frame of a `subscribe` / `unsubscribe` request.

@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { ActiveAssetDataResponse } from "../../info/_methods/activeAssetData.ts";
+import { Address } from "../../_schemas.js";
+import type { ActiveAssetDataResponse } from "../../info/_methods/activeAssetData.js";
 
 /**
  * Subscription to active asset data events for a specific user and coin.
@@ -33,9 +33,9 @@ export type ActiveAssetDataEvent = ActiveAssetDataResponse;
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode activeAssetData} function. */
 export type ActiveAssetDataParameters = Omit<v.InferInput<typeof ActiveAssetDataRequest>, "type">;

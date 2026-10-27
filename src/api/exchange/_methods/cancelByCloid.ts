@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, Cloid, Hex, UnsignedInteger } from "../../_schemas.ts";
-import type { CancelResponse } from "./cancel.ts";
+import { Address, Cloid, Hex, UnsignedInteger } from "../../_schemas.js";
+import type { CancelResponse } from "./cancel.js";
 
 /**
  * Cancel order(s) by cloid.
@@ -58,14 +58,14 @@ export type CancelByCloidResponse = CancelResponse;
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import { canonicalize } from "../../../signing/mod.ts";
+import { parse } from "../../../_base.js";
+import { canonicalize } from "../../../signing/mod.js";
 import {
   type ExchangeConfig,
   type ExcludeErrorResponse,
   executeL1Action,
   type ExtractRequestOptions,
-} from "./_base/mod.ts";
+} from "./_base/mod.js";
 
 /** Schema for action fields (excludes request-level system fields). */
 const CancelByCloidActionSchema = /* @__PURE__ */ (() => {

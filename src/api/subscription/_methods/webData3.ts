@@ -1,12 +1,12 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { LeadingVaultsResponse } from "../../info/_methods/leadingVaults.ts";
-import type { PerpsAtOpenInterestCapResponse } from "../../info/_methods/perpsAtOpenInterestCap.ts";
+import { Address } from "../../_schemas.js";
+import type { LeadingVaultsResponse } from "../../info/_methods/leadingVaults.js";
+import type { PerpsAtOpenInterestCapResponse } from "../../info/_methods/perpsAtOpenInterestCap.js";
 
 /**
  * Subscription to comprehensive user and market data events.
@@ -75,9 +75,9 @@ export type WebData3Event = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode webData3} function. */
 export type WebData3Parameters = Omit<v.InferInput<typeof WebData3Request>, "type">;

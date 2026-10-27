@@ -14,6 +14,6 @@
  * @module
  */
 
-export * from "./_base.ts";
-export * from "./http/mod.ts";
-export * from "./websocket/mod.ts";
+export * from "./_base.js";
+export * from "./http/mod.js";
+export * from "./websocket/mod.js";

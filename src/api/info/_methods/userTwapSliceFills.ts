@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { UserFill } from "./_base/mod.ts";
+import { Address } from "../../_schemas.js";
+import type { UserFill } from "./_base/mod.js";
 
 /**
  * Request user TWAP slice fills.
@@ -36,8 +36,8 @@ export type UserTwapSliceFillsResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userTwapSliceFills} function. */
 export type UserTwapSliceFillsParameters = Omit<v.InferInput<typeof UserTwapSliceFillsRequest>, "type">;

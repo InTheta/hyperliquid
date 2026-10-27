@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { FrontendOpenOrder } from "./_base/mod.ts";
+import { Address } from "../../_schemas.js";
+import type { FrontendOpenOrder } from "./_base/mod.js";
 
 /**
  * Request frontend open orders.
@@ -33,8 +33,8 @@ export type FrontendOpenOrdersResponse = FrontendOpenOrder[];
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode frontendOpenOrders} function. */
 export type FrontendOpenOrdersParameters = Omit<v.InferInput<typeof FrontendOpenOrdersRequest>, "type">;

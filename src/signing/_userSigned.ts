@@ -3,8 +3,8 @@
  * @module
  */
 
-import { type AbstractWallet, type Signature, signTypedData } from "./_abstractWallet.ts";
-import { trimSignature } from "./_multiSig.ts";
+import { type AbstractWallet, type Signature, signTypedData } from "./_abstractWallet.js";
+import { trimSignature } from "./_multiSig.js";
 
 /**
  * Signs a user-signed action.

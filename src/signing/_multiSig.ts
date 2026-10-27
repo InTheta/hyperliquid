@@ -3,9 +3,9 @@
  * @module
  */
 
-import { type AbstractWallet, getWalletAddress, type Signature, signTypedData } from "./_abstractWallet.ts";
-import { createL1ActionHash, signL1Inner } from "./_l1.ts";
-import { signUserSignedInner } from "./_userSigned.ts";
+import { type AbstractWallet, getWalletAddress, type Signature, signTypedData } from "./_abstractWallet.js";
+import { createL1ActionHash, signL1Inner } from "./_l1.js";
+import { signUserSignedInner } from "./_userSigned.js";
 
 /** EIP-712 types for the multi-sig outer wrapper. */
 const MULTI_SIG_TYPES = {

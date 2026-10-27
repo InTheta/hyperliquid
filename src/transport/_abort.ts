@@ -3,7 +3,7 @@
  * @module
  */
 
-import { DOMException_, Promise_ } from "./_polyfills.ts";
+import { DOMException_, Promise_ } from "./_polyfills.js";
 
 /** Aborts `target` with a `TimeoutError` after `ms`; `cancel` clears the timer, `reason` identifies the abort. */
 export function scheduleTimeout(target: AbortController, ms: number | null): { reason: Error; cancel: () => void } {

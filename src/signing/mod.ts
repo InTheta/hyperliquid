@@ -13,8 +13,8 @@ export {
   getWalletAddress,
   getWalletChainId,
   type Signature,
-} from "./_abstractWallet.ts";
-export { canonicalize, CanonicalizeError } from "./_canonicalize.ts";
-export { createL1ActionHash, signL1Action } from "./_l1.ts";
-export { signUserSignedAction } from "./_userSigned.ts";
-export { signMultiSigL1, signMultiSigUserSigned } from "./_multiSig.ts";
+} from "./_abstractWallet.js";
+export { canonicalize, CanonicalizeError } from "./_canonicalize.js";
+export { createL1ActionHash, signL1Action } from "./_l1.js";
+export { signUserSignedAction } from "./_userSigned.js";
+export { signMultiSigL1, signMultiSigUserSigned } from "./_multiSig.js";

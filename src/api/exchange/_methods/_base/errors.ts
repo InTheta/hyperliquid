@@ -3,7 +3,7 @@
  * @module
  */
 
-import { ApiRequestError } from "../../../_errors.ts";
+import { ApiRequestError } from "../../../_errors.js";
 
 export { ApiRequestError };
 

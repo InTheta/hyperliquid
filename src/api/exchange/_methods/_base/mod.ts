@@ -8,6 +8,6 @@ export type {
   ExchangeMultiSigConfig,
   ExchangeSingleWalletConfig,
   ExtractRequestOptions,
-} from "./_config.ts";
-export { ApiRequestError, type ExcludeErrorResponse } from "./errors.ts";
-export { executeL1Action, executeUserSignedAction } from "./execute.ts";
+} from "./_config.js";
+export { ApiRequestError, type ExcludeErrorResponse } from "./errors.js";
+export { executeL1Action, executeUserSignedAction } from "./execute.js";

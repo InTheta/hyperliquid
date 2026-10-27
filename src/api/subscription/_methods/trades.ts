@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { RecentTradesResponse } from "../../info/_methods/recentTrades.ts";
+import type { RecentTradesResponse } from "../../info/_methods/recentTrades.js";
 
 /**
  * Subscription to trade events for a specific asset.
@@ -30,9 +30,9 @@ export type TradesEvent = RecentTradesResponse;
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode trades} function. */
 export type TradesParameters = Omit<v.InferInput<typeof TradesRequest>, "type">;

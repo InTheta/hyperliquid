@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
@@ -43,9 +43,9 @@ export type ExplorerBlockEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription, ISubscriptionTransport, TransportError } from "../../../transport/mod.ts";
-import type { ExplorerConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription, ISubscriptionTransport, TransportError } from "../../../transport/mod.js";
+import type { ExplorerConfig } from "./_base/mod.js";
 
 /**
  * Subscribe to explorer block updates.

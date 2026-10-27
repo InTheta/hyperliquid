@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { TwapState } from "./_base/mod.ts";
+import { Address } from "../../_schemas.js";
+import type { TwapState } from "./_base/mod.js";
 
 /**
  * Request TWAP history of a user.
@@ -56,8 +56,8 @@ export type TwapHistoryResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode twapHistory} function. */
 export type TwapHistoryParameters = Omit<v.InferInput<typeof TwapHistoryRequest>, "type">;

@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { UserNonFundingLedgerUpdatesResponse } from "../../info/_methods/userNonFundingLedgerUpdates.ts";
+import { Address } from "../../_schemas.js";
+import type { UserNonFundingLedgerUpdatesResponse } from "../../info/_methods/userNonFundingLedgerUpdates.js";
 
 /**
  * Subscription to user non-funding ledger updates for a specific user.
@@ -41,9 +41,9 @@ export type UserNonFundingLedgerUpdatesEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userNonFundingLedgerUpdates} function. */
 export type UserNonFundingLedgerUpdatesParameters = Omit<

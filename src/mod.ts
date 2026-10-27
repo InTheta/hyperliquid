@@ -29,10 +29,10 @@
  * @module
  */
 
-export { HyperliquidError, ValidationError } from "./_base.ts";
-export { AbstractWalletError } from "./signing/mod.ts";
-export * from "./transport/mod.ts";
-export * from "./api/exchange/client.ts";
-export * from "./api/explorer/client.ts";
-export * from "./api/info/client.ts";
-export * from "./api/subscription/client.ts";
+export { HyperliquidError, ValidationError } from "./_base.js";
+export { AbstractWalletError } from "./signing/mod.js";
+export * from "./transport/mod.js";
+export * from "./api/exchange/client.js";
+export * from "./api/explorer/client.js";
+export * from "./api/info/client.js";
+export * from "./api/subscription/client.js";

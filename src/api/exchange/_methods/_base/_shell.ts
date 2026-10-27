@@ -3,11 +3,11 @@
  * @module
  */
 
-import { getWalletAddress, type Signature } from "../../../../signing/mod.ts";
-import type { ExchangeConfig } from "./_config.ts";
-import { assertSuccessResponse } from "./errors.ts";
-import { globalNonceManager } from "./_nonce.ts";
-import { withLock } from "./_semaphore.ts";
+import { getWalletAddress, type Signature } from "../../../../signing/mod.js";
+import type { ExchangeConfig } from "./_config.js";
+import { assertSuccessResponse } from "./errors.js";
+import { globalNonceManager } from "./_nonce.js";
+import { withLock } from "./_semaphore.js";
 
 /** Result returned by the {@linkcode executeWithShell} `build` callback. */
 export interface BuildResult {

@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { FrontendOpenOrdersResponse } from "../../info/_methods/frontendOpenOrders.ts";
+import { Address } from "../../_schemas.js";
+import type { FrontendOpenOrdersResponse } from "../../info/_methods/frontendOpenOrders.js";
 
 /**
  * Subscription to open order events for a specific user.
@@ -43,9 +43,9 @@ export type OpenOrdersEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode openOrders} function. */
 export type OpenOrdersParameters = Omit<v.InferInput<typeof OpenOrdersRequest>, "type">;

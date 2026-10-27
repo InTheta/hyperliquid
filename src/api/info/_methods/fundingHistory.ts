@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { UnsignedInteger } from "../../_schemas.ts";
+import { UnsignedInteger } from "../../_schemas.js";
 
 /**
  * Request funding history.
@@ -49,8 +49,8 @@ export type FundingHistoryResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode fundingHistory} function. */
 export type FundingHistoryParameters = Omit<v.InferInput<typeof FundingHistoryRequest>, "type">;

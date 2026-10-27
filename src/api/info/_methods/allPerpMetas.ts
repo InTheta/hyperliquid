@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { MetaResponse } from "./meta.ts";
+import type { MetaResponse } from "./meta.js";
 
 /**
  * Request trading metadata for all DEXs.
@@ -28,8 +28,8 @@ export type AllPerpMetasResponse = MetaResponse[];
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request trading metadata for all DEXs.

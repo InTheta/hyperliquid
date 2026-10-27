@@ -1,13 +1,13 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { ClearinghouseStateResponse } from "./clearinghouseState.ts";
-import type { SpotClearinghouseStateResponse } from "./spotClearinghouseState.ts";
-import type { UserAbstractionResponse } from "./userAbstraction.ts";
+import { Address } from "../../_schemas.js";
+import type { ClearinghouseStateResponse } from "./clearinghouseState.js";
+import type { SpotClearinghouseStateResponse } from "./spotClearinghouseState.js";
+import type { UserAbstractionResponse } from "./userAbstraction.js";
 
 /**
  * Request user sub-accounts (V2).
@@ -57,8 +57,8 @@ export type SubAccounts2Response = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode subAccounts2} function. */
 export type SubAccounts2Parameters = Omit<v.InferInput<typeof SubAccounts2Request>, "type">;

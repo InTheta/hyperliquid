@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { OpenOrder, OrderProcessingStatus } from "../../info/_methods/_base/mod.ts";
+import { Address } from "../../_schemas.js";
+import type { OpenOrder, OrderProcessingStatus } from "../../info/_methods/_base/mod.js";
 
 /**
  * Subscription to order updates for a specific user.
@@ -72,9 +72,9 @@ export type OrderUpdatesEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode orderUpdates} function. */
 export type OrderUpdatesParameters = Omit<v.InferInput<typeof OrderUpdatesRequest>, "type">;

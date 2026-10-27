@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { BorrowLendReserveStateResponse } from "./borrowLendReserveState.ts";
+import type { BorrowLendReserveStateResponse } from "./borrowLendReserveState.js";
 
 /**
  * Request all borrow/lend reserve states.
@@ -33,8 +33,8 @@ export type AllBorrowLendReserveStatesResponse = [
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /**
  * Request all borrow/lend reserve states.

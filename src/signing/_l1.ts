@@ -5,9 +5,9 @@
 
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { bytesToHex, concatBytes, hexToBytes } from "@noble/hashes/utils.js";
-import { encode as encodeMsgpack, type ValueType } from "@std/msgpack/encode";
-import { type AbstractWallet, type Signature, signTypedData } from "./_abstractWallet.ts";
-import { trimSignature } from "./_multiSig.ts";
+import { encode as encodeMsgpack, type ValueType } from "../deps/jsr.io/@std/msgpack/1.0.3/encode.js";
+import { type AbstractWallet, type Signature, signTypedData } from "./_abstractWallet.js";
+import { trimSignature } from "./_multiSig.js";
 
 /**
  * Creates a hash of the L1 action.

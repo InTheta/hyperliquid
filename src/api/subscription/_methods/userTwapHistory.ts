@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { TwapHistoryResponse } from "../../info/_methods/twapHistory.ts";
+import { Address } from "../../_schemas.js";
+import type { TwapHistoryResponse } from "../../info/_methods/twapHistory.js";
 
 /**
  * Subscription to user TWAP history events for a specific user.
@@ -41,9 +41,9 @@ export type UserTwapHistoryEvent = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode userTwapHistory} function. */
 export type UserTwapHistoryParameters = Omit<v.InferInput<typeof UserTwapHistoryRequest>, "type">;

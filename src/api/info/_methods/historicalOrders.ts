@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { FrontendOpenOrder, OrderProcessingStatus } from "./_base/mod.ts";
+import { Address } from "../../_schemas.js";
+import type { FrontendOpenOrder, OrderProcessingStatus } from "./_base/mod.js";
 
 /**
  * Request user historical orders.
@@ -72,8 +72,8 @@ export type HistoricalOrdersResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode historicalOrders} function. */
 export type HistoricalOrdersParameters = Omit<v.InferInput<typeof HistoricalOrdersRequest>, "type">;

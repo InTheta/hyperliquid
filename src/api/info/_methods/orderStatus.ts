@@ -1,11 +1,11 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address, Cloid, UnsignedInteger } from "../../_schemas.ts";
-import type { FrontendOpenOrder, OrderProcessingStatus } from "./_base/mod.ts";
+import { Address, Cloid, UnsignedInteger } from "../../_schemas.js";
+import type { FrontendOpenOrder, OrderProcessingStatus } from "./_base/mod.js";
 
 /**
  * Request order status.
@@ -84,8 +84,8 @@ export type OrderStatusResponse = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode orderStatus} function. */
 export type OrderStatusParameters = Omit<v.InferInput<typeof OrderStatusRequest>, "type">;

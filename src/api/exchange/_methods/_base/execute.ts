@@ -3,18 +3,18 @@
  * @module
  */
 
-import * as v from "@valibot/valibot";
-import { HyperliquidError, parse } from "../../../../_base.ts";
+import * as v from "valibot";
+import { HyperliquidError, parse } from "../../../../_base.js";
 import {
   getWalletChainId,
   signL1Action,
   signMultiSigL1,
   signMultiSigUserSigned,
   signUserSignedAction,
-} from "../../../../signing/mod.ts";
-import { Address, Hex, UnsignedInteger } from "../../../_schemas.ts";
-import type { ExchangeConfig } from "./_config.ts";
-import { executeWithShell } from "./_shell.ts";
+} from "../../../../signing/mod.js";
+import { Address, Hex, UnsignedInteger } from "../../../_schemas.js";
+import type { ExchangeConfig } from "./_config.js";
+import { executeWithShell } from "./_shell.js";
 
 // ============================================================
 // Execute L1 Action

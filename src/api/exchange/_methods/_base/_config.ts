@@ -3,8 +3,8 @@
  * @module
  */
 
-import type { AbstractWallet } from "../../../../signing/mod.ts";
-import type { IRequestTransport } from "../../../../transport/mod.ts";
+import type { AbstractWallet } from "../../../../signing/mod.js";
+import type { IRequestTransport } from "../../../../transport/mod.js";
 
 // ============================================================
 // Type Utilities

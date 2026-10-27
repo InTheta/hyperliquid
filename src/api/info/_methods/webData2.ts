@@ -1,17 +1,17 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import { Address } from "../../_schemas.ts";
-import type { PerpAssetCtx, SpotAssetCtx, TwapState } from "./_base/mod.ts";
-import type { ClearinghouseStateResponse } from "./clearinghouseState.ts";
-import type { FrontendOpenOrdersResponse } from "./frontendOpenOrders.ts";
-import type { LeadingVaultsResponse } from "./leadingVaults.ts";
-import type { MetaResponse } from "./meta.ts";
-import type { PerpsAtOpenInterestCapResponse } from "./perpsAtOpenInterestCap.ts";
-import type { SpotClearinghouseStateResponse } from "./spotClearinghouseState.ts";
+import { Address } from "../../_schemas.js";
+import type { PerpAssetCtx, SpotAssetCtx, TwapState } from "./_base/mod.js";
+import type { ClearinghouseStateResponse } from "./clearinghouseState.js";
+import type { FrontendOpenOrdersResponse } from "./frontendOpenOrders.js";
+import type { LeadingVaultsResponse } from "./leadingVaults.js";
+import type { MetaResponse } from "./meta.js";
+import type { PerpsAtOpenInterestCapResponse } from "./perpsAtOpenInterestCap.js";
+import type { SpotClearinghouseStateResponse } from "./spotClearinghouseState.js";
 
 /**
  * Request comprehensive user and market data.
@@ -89,8 +89,8 @@ export type WebData2Response = {
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { InfoConfig } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { InfoConfig } from "./_base/mod.js";
 
 /** Request parameters for the {@linkcode webData2} function. */
 export type WebData2Parameters = Omit<v.InferInput<typeof WebData2Request>, "type">;

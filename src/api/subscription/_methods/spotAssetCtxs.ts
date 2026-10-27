@@ -1,10 +1,10 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 // ============================================================
 // API Schemas
 // ============================================================
 
-import type { SpotAssetCtx } from "../../info/_methods/_base/mod.ts";
+import type { SpotAssetCtx } from "../../info/_methods/_base/mod.js";
 
 /**
  * Subscription to context events for all spot assets.
@@ -28,9 +28,9 @@ export type SpotAssetCtxsEvent = SpotAssetCtx[];
 // Execution Logic
 // ============================================================
 
-import { parse } from "../../../_base.ts";
-import type { ISubscription } from "../../../transport/mod.ts";
-import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.ts";
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
 
 /**
  * Subscribe to context updates for all spot assets.

@@ -36,11 +36,11 @@
  * @module
  */
 
-export { ApiRequestError } from "./_methods/_base/mod.ts";
-export type { ExplorerConfig } from "./_methods/_base/mod.ts";
+export { ApiRequestError } from "./_methods/_base/mod.js";
+export type { ExplorerConfig } from "./_methods/_base/mod.js";
 
-export * from "./_methods/blockDetails.ts";
-export * from "./_methods/explorerBlock.ts";
-export * from "./_methods/explorerTxs.ts";
-export * from "./_methods/txDetails.ts";
-export * from "./_methods/userDetails.ts";
+export * from "./_methods/blockDetails.js";
+export * from "./_methods/explorerBlock.js";
+export * from "./_methods/explorerTxs.js";
+export * from "./_methods/txDetails.js";
+export * from "./_methods/userDetails.js";

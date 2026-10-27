@@ -1,3 +1,4 @@
+import * as dntShim from "../_dnt.shims.js";
 import {
   allMids as fetchAllMids,
   type AllMidsResponse,
@@ -13,9 +14,9 @@ import {
   type PredictedFundingsResponse,
   spotMetaAndAssetCtxs,
   type SpotMetaAndAssetCtxsResponse,
-} from "../api/info/mod.ts";
-import type { PerpAssetCtx } from "../api/info/_methods/_base/mod.ts";
-import type { ClearinghouseStateResponse } from "../api/info/_methods/clearinghouseState.ts";
+} from "../api/info/mod.js";
+import type { PerpAssetCtx } from "../api/info/_methods/_base/mod.js";
+import type { ClearinghouseStateResponse } from "../api/info/_methods/clearinghouseState.js";
 import {
   allDexsAssetCtxs,
   type AllDexsAssetCtxsEvent,
@@ -23,9 +24,9 @@ import {
   type AllDexsClearinghouseStateEvent,
   allMids as subscribeAllMids,
   type AllMidsEvent,
-} from "../api/subscription/mod.ts";
-import type { IRequestTransport, ISubscription, ISubscriptionTransport } from "../transport/mod.ts";
-import { formatPrice, formatSize } from "./_format.ts";
+} from "../api/subscription/mod.js";
+import type { IRequestTransport, ISubscription, ISubscriptionTransport } from "../transport/mod.js";
+import { formatPrice, formatSize } from "./_format.js";
 
 /** Cache groups managed by {@link HyperliquidMarketCache}. */
 export type HyperliquidMarketCacheKey =
@@ -459,7 +460,7 @@ function resolveStorage(
 ): HyperliquidMarketCacheStorage | null {
   if (!storage) return null;
   if (storage === "localStorage") {
-    const maybeStorage = (globalThis as { localStorage?: HyperliquidMarketCacheStorage }).localStorage;
+    const maybeStorage = (dntShim.dntGlobalThis as { localStorage?: HyperliquidMarketCacheStorage }).localStorage;
     return maybeStorage ?? null;
   }
   return storage;
