@@ -195,13 +195,19 @@ class MockInfoTransport implements IRequestTransport {
 
 class MemoryStorage {
   data = new Map<string, string>();
+  writes = 0;
+  serializedBytes = 0;
+  removals = 0;
   getItem(key: string): string | null {
     return this.data.get(key) ?? null;
   }
   setItem(key: string, value: string): void {
+    this.writes += 1;
+    this.serializedBytes += new TextEncoder().encode(value).byteLength;
     this.data.set(key, value);
   }
   removeItem(key: string): void {
+    this.removals += 1;
     this.data.delete(key);
   }
 }
@@ -965,6 +971,175 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     const persistentHydrated = new HyperliquidMarketCache({ transport, storage: persistentStorage });
     persistentHydrated.hydrate();
     assertEquals(persistentHydrated.getOutcomeMid("#52360"), "0.4");
+  });
+
+  await t.step("volatile live mids leave persisted catalogue bytes unchanged", async () => {
+    const storage = new MemoryStorage();
+    const transport = new MockInfoTransport();
+    const subscriptionTransport = new MockSubscriptionTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      subscriptionTransport,
+      dexs: true,
+      storage,
+      caches: {
+        metadata: true,
+        outcomeMeta: true,
+        contexts: { enabled: true, persist: true },
+        allMids: { enabled: true, persist: false },
+      },
+    });
+    await cache.refresh(["metadata", "contexts", "outcomeMeta"]);
+    await cache.startConfiguredAllMids();
+    const before = storage.getItem(cache.storageKey);
+    const writes = storage.writes;
+    const bytes = storage.serializedBytes;
+    const requests = transport.requests.length;
+    const context = cache.getPerpContext("BTC");
+    assertEquals(typeof before, "string");
+    assertEquals(writes > 0, true);
+    assertEquals(subscriptionTransport.subscriptions.length, 4);
+    assertEquals(cache.snapshot().updatedAt.allMids, undefined);
+
+    const startedAt = Date.now();
+    for (let i = 0; i < 20; i += 1) {
+      subscriptionTransport.emit("allMids", {
+        dex: "",
+        mids: { BTC: String(100040 + i), "@107": String(100041 + i), "#52360": `0.${40 + i}` },
+      });
+      subscriptionTransport.emit("allMids", { dex: "dexA", mids: { AAA: String(13 + i) } });
+      subscriptionTransport.emit("allMids", { dex: "dexB", mids: { "dexB:BBB": `0.${20 + i}` } });
+    }
+    assertEquals(cache.getMid("BTC"), "100059");
+    assertEquals(cache.getMid("@107"), "100060");
+    assertEquals(cache.getMid("dexA:AAA"), "32");
+    assertEquals(cache.getMid("dexB:BBB"), "0.39");
+    assertEquals(cache.getOutcomeMid("#52360"), "0.59");
+    assertEquals(cache.getAllMids("dexA"), { AAA: "32" });
+    const updatedAt = cache.snapshot().updatedAt.allMids ?? 0;
+    assertEquals(updatedAt >= startedAt && updatedAt <= Date.now(), true);
+    assertEquals(cache.getPerpContext("BTC"), context);
+    assertEquals(transport.requests.length, requests);
+    assertEquals(subscriptionTransport.subscriptions.length, 4);
+    for (const malformed of [null, undefined, [], 123, { mids: { BTC: 123 } }]) {
+      cache.applyAllMids(malformed);
+    }
+    assertEquals(cache.getMid("BTC"), "100059");
+    assertEquals(storage.writes, writes);
+    assertEquals(storage.serializedBytes, bytes);
+    assertEquals(storage.getItem(cache.storageKey), before);
+
+    const hydrated = new HyperliquidMarketCache({ transport, storage });
+    hydrated.hydrate();
+    assertEquals(hydrated.getAssetId("dexA:AAA"), 110000);
+    assertEquals(hydrated.resolveMarket("dexA:AAA")?.marginMode, "noCross");
+    assertEquals(hydrated.getMid("BTC"), "100000");
+    assertEquals(hydrated.getMid("@107"), "100001");
+    assertEquals(hydrated.getMid("dexA:AAA"), "12.34");
+    assertEquals(hydrated.getPerpContext("BTC"), context);
+    assertEquals(hydrated.resolveOutcomeMarket("#52360")?.questionId, 1);
+    assertEquals(hydrated.getOutcomeMid("#52360"), undefined);
+    assertEquals(hydrated.getAllMids(), undefined);
+    assertEquals(hydrated.snapshot().updatedAt.allMids, undefined);
+    assertEquals(hydrated.snapshot().updatedAt.contexts, cache.snapshot().updatedAt.contexts);
+
+    for (const group of ["metadata", "contexts", "outcomeMeta"] as const) {
+      const priorWrites = storage.writes;
+      transport.mainFunding = "-0.0004";
+      await cache.refresh(group);
+      assertEquals(storage.writes > priorWrites, true);
+    }
+    const refreshed = new HyperliquidMarketCache({ transport, storage });
+    refreshed.hydrate();
+    assertEquals(refreshed.getFundingRate("BTC"), "-0.0004");
+    assertEquals(refreshed.getOutcomeMid("#52360"), undefined);
+    const beforeClear = storage.writes;
+    cache.clear("outcomeMeta");
+    assertEquals(storage.writes, beforeClear + 1);
+    const cleared = new HyperliquidMarketCache({ transport, storage });
+    cleared.hydrate();
+    assertEquals(cleared.resolveOutcomeMarket("#52360"), undefined);
+    assertEquals(cleared.getAssetId("BTC"), 0);
+    cache.clear();
+    assertEquals(storage.removals, 1);
+    assertEquals(storage.getItem(cache.storageKey), null);
+    await cache.stopAllMids();
+    assertEquals(subscriptionTransport.subscriptions.every((row) => row.unsubscribed), true);
+  });
+
+  await t.step("opt-in live mids persist and hydrate main, builder, spot, and outcomes exactly", async () => {
+    const storage = new MemoryStorage();
+    const transport = new MockInfoTransport();
+    const cache = new HyperliquidMarketCache({
+      transport,
+      dexs: true,
+      storage,
+      caches: { metadata: true, outcomeMeta: true, allMids: { enabled: true, persist: true } },
+    });
+    await cache.refresh(["metadata", "outcomeMeta"]);
+    const writes = storage.writes;
+    const bytes = storage.serializedBytes;
+    cache.applyAllMids({ mids: { BTC: "100060", "@107": "100061", "#52360": "0.61" } });
+    cache.applyAllMids({ AAA: "13.7" }, "dexA");
+    cache.applyAllMids({ mids: { BTC: "100070", "@107": "100071", "#52360": "0.71" } });
+    assertEquals(storage.writes, writes + 3);
+    assertEquals(storage.serializedBytes > bytes, true);
+    const stored = storage.getItem(cache.storageKey);
+    cache.applyAllMids(null);
+    cache.applyAllMids([]);
+    assertEquals(storage.writes, writes + 3);
+    assertEquals(storage.getItem(cache.storageKey), stored);
+    const hydrated = new HyperliquidMarketCache({ transport, storage });
+    hydrated.hydrate();
+    assertEquals(hydrated.getMid("BTC"), "100070");
+    assertEquals(hydrated.getMid("dexA:AAA"), "13.7");
+    assertEquals(hydrated.getMid("@107"), "100071");
+    assertEquals(hydrated.getOutcomeMid("#52360"), "0.71");
+    assertEquals(hydrated.getAllMids(), cache.getAllMids());
+    assertEquals(hydrated.getAllMids("dexA"), cache.getAllMids("dexA"));
+    assertEquals(hydrated.snapshot().updatedAt.allMids, cache.snapshot().updatedAt.allMids);
+  });
+
+  await t.step("explicit network storage keys isolate persisted catalogues during live mids and clear", async () => {
+    const storage = new MemoryStorage();
+    const mainTransport = new MockInfoTransport();
+    const testTransport = new MockInfoTransport();
+    testTransport.isTestnet = true;
+    testTransport.mainMid = "200000";
+    const main = new HyperliquidMarketCache({
+      transport: mainTransport,
+      storage,
+      storageKey: "market-cache:mainnet",
+      caches: { metadata: true, allMids: { enabled: true, persist: false } },
+    });
+    const test = new HyperliquidMarketCache({
+      transport: testTransport,
+      storage,
+      storageKey: "market-cache:testnet",
+      caches: { metadata: true, allMids: { enabled: true, persist: true } },
+    });
+    await main.refresh("metadata");
+    await test.refresh("metadata");
+    const mainBytes = storage.getItem(main.storageKey);
+    const testBytes = storage.getItem(test.storageKey);
+    assertEquals(main.storageKey === test.storageKey, false);
+    main.applyAllMids({ BTC: "100080" });
+    assertEquals(storage.getItem(test.storageKey), testBytes);
+    test.applyAllMids({ BTC: "200080" });
+    assertEquals(storage.getItem(main.storageKey), mainBytes);
+    for (
+      const [transport, storageKey, expected] of [
+        [mainTransport, main.storageKey, "100000"],
+        [testTransport, test.storageKey, "200080"],
+      ] as const
+    ) {
+      const hydrated = new HyperliquidMarketCache({ transport, storage, storageKey });
+      hydrated.hydrate();
+      assertEquals(hydrated.getMid("BTC"), expected);
+    }
+    test.clear();
+    assertEquals(storage.getItem(test.storageKey), null);
+    assertEquals(storage.getItem(main.storageKey), mainBytes);
   });
 
   await t.step("hydrate rebuilds outcome alias maps from older persisted outcome metadata snapshots", () => {
