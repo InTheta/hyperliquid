@@ -747,7 +747,7 @@ export class HyperliquidMarketCache {
     this._snapshot.rawAllMidsByDex[key] = mids;
     this._applyMidsForDex(key, mids);
     this._snapshot.updatedAt.allMids = Date.now();
-    this._persist();
+    if (this._policies.allMids.persist) this._persist();
   }
 
   /** Subscribe to live asset contexts for all perpetual DEXs. */

@@ -1,9 +1,9 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { providers as providersV5, Wallet as WalletV5 } from "npm:ethers@5";
 import { JsonRpcProvider as JsonRpcProviderV6, Wallet as WalletV6 } from "npm:ethers@6";
-import { createWalletClient, custom } from "npm:viem@2";
-import { privateKeyToAccount } from "npm:viem@2/accounts";
-import { arbitrum } from "npm:viem@2/chains";
+import { createWalletClient, custom } from "npm:viem@2.57.11";
+import { privateKeyToAccount } from "npm:viem@2.57.11/accounts";
+import { arbitrum } from "npm:viem@2.57.11/chains";
 
 import {
   createL1ActionHash,
