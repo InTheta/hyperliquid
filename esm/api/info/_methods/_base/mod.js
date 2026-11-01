@@ -1,0 +1,6 @@
+/**
+ * Base infrastructure for Info API methods.
+ * @module
+ */
+export * from "./_schemas.js";
+//# sourceMappingURL=mod.js.map
