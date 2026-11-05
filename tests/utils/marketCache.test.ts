@@ -1202,3 +1202,244 @@ Deno.test("HyperliquidMarketCache", async (t) => {
     assertEquals(hydrated.getMid("dexB:AAA"), "11.5");
   });
 });
+
+Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
+  const asset = (name: string, extra: Record<string, unknown> = {}) => ({
+    name,
+    szDecimals: 3,
+    maxLeverage: 10,
+    ...extra,
+  });
+  const ctx = (px: string): Record<string, unknown> => ({
+    markPx: px,
+    midPx: px,
+    oraclePx: px,
+    funding: "0.0001",
+    openInterest: "1",
+    dayNtlVlm: "1",
+    prevDayPx: px,
+    premium: "0",
+  });
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  // Two DEXs; every universe has one delisted entry. A live frame carries one row per universe entry.
+  const mainRows = [ctx("1"), ctx("0"), ctx("2")];
+  const dexRows = [ctx("3"), ctx("0")];
+  const frame = (): { ctxs: Array<[string, Record<string, unknown>[]]> } => ({
+    ctxs: [["", mainRows.map((r) => ({ ...r }))], ["dexA", dexRows.map((r) => ({ ...r }))]],
+  });
+
+  class UniverseTransport implements IRequestTransport {
+    isTestnet = false;
+    requests: Record<string, unknown>[] = [];
+    main = {
+      universe: [asset("BTC"), asset("OLD", { isDelisted: true }), asset("ETH")],
+      marginTables: [],
+      collateralToken: 0,
+    };
+    request<T>(_endpoint: "info" | "exchange" | "explorer", payload: unknown): Promise<T> {
+      const req = payload as Record<string, unknown>;
+      this.requests.push(req);
+      if (req.type === "perpDexs") return Promise.resolve([null, makeDex("dexA")] as T);
+      if (req.type === "metaAndAssetCtxs" && req.dex === "dexA") {
+        return Promise.resolve([
+          { universe: [asset("AAA"), asset("OLDA", { isDelisted: true })], marginTables: [], collateralToken: 0 },
+          dexRows,
+        ] as T);
+      }
+      if (req.type === "metaAndAssetCtxs") return Promise.resolve([this.main, mainRows] as T);
+      if (req.type === "spotMetaAndAssetCtxs") {
+        return Promise.resolve([
+          { tokens: [{ name: "USDC", index: 0, szDecimals: 8, weiDecimals: 8 }], universe: [] },
+          [],
+        ] as T);
+      }
+      throw new Error(`Unexpected request: ${String(req.type)}`);
+    }
+  }
+  const sweeps = (transport: UniverseTransport) =>
+    transport.requests.filter((r) => r.type === "metaAndAssetCtxs").length;
+  const make = (
+    transport: UniverseTransport,
+    extra: Partial<ConstructorParameters<typeof HyperliquidMarketCache>[0]> = {},
+  ) =>
+    new HyperliquidMarketCache({
+      transport,
+      dexs: true,
+      caches: {
+        metadata: { enabled: true, persist: false, ttlMs: 3_600_000 },
+        contexts: { enabled: true, persist: false, ttlMs: 60_000 },
+      },
+      ...extra,
+    });
+
+  await t.step("delisted rows are expected, not unmapped, and never start a metadata refresh", async () => {
+    const transport = new UniverseTransport();
+    const cache = make(transport);
+    await cache.refresh(["metadata", "contexts"]);
+    const before = sweeps(transport);
+    cache.applyAllDexsAssetCtxs(frame());
+    await sleep(20);
+    const snap = cache.snapshot();
+    assertEquals(snap.unmappedAllDexsAssetCtxs.length, 0);
+    assertEquals(snap.needsMetadataRefresh, false);
+    assertEquals(sweeps(transport), before);
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "1");
+    assertEquals(cache.getPerpContext("dexA:AAA")?.markPx, "3");
+  });
+
+  await t.step("a row past the known universe is still unmapped and still starts a metadata refresh", async () => {
+    const transport = new UniverseTransport();
+    const cache = make(transport);
+    await cache.refresh(["metadata", "contexts"]);
+    const before = sweeps(transport);
+    const grown = frame();
+    grown.ctxs[0][1].push(ctx("9"));
+    cache.applyAllDexsAssetCtxs(grown);
+    await sleep(20);
+    assertEquals(cache.snapshot().unmappedAllDexsAssetCtxs.length, 1);
+    assertEquals(sweeps(transport) > before, true);
+  });
+
+  await t.step("contexts land on the rebuilt records after a metadata refresh", async () => {
+    const transport = new UniverseTransport();
+    const cache = make(transport);
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    await cache.refresh(["metadata", "contexts"]);
+    const next = frame();
+    next.ctxs[0][1][0].markPx = "7";
+    cache.applyAllDexsAssetCtxs(next);
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "7");
+  });
+
+  await t.step("persistThrottleMs coalesces live-frame writes and flushPersistence writes at once", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_k: string, v: string) => void writes.push(v),
+      removeItem: () => {},
+    };
+    const transport = new UniverseTransport();
+    const cache = make(transport, { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    await sleep(120);
+    writes.length = 0;
+    for (let i = 0; i < 20; i += 1) cache.applyAllDexsAssetCtxs(frame());
+    assertEquals(writes.length, 1); // leading write only
+    await sleep(160);
+    assertEquals(writes.length, 2); // one trailing write for the other 19 frames
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.flushPersistence();
+    assertEquals(writes.length, 3);
+    await sleep(160);
+    assertEquals(writes.length, 3); // flush cancelled the pending write
+  });
+
+  await t.step("by default every live frame persists, as before", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_k: string, v: string) => void writes.push(v),
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), { storage });
+    await cache.refresh(["metadata", "contexts"]);
+    writes.length = 0;
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.applyAllDexsAssetCtxs(frame());
+    assertEquals(writes.length, 2);
+  });
+  await t.step("clear cancels trailing writes and resets the next leading write", async () => {
+    let saved: string | null = null;
+    let writes = 0;
+    const storage = {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => {
+        saved = value;
+        writes += 1;
+      },
+      removeItem: () => {
+        saved = null;
+      },
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.clear();
+    assertEquals(saved, null);
+    const before = writes;
+    await sleep(160);
+    assertEquals(saved, null);
+    assertEquals(writes, before);
+    cache.applyAllDexsAssetCtxs({ ctxs: [] });
+    assertEquals(writes, before + 1);
+    cache.clear();
+  });
+
+  await t.step("selective clear persists once and cancels the pending trailing write", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_key: string, value: string) => {
+        writes.push(value);
+      },
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.clear("allDexsAssetCtxs");
+    const before = writes.length;
+    assertEquals(JSON.parse(writes.at(-1)!).snapshot.rawAllDexsAssetCtxsByDex, {});
+    await sleep(160);
+    assertEquals(writes.length, before);
+  });
+
+  await t.step("immediate refresh supersedes a pending trailing write", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_key: string, value: string) => {
+        writes.push(value);
+      },
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    await cache.refresh(["metadata", "contexts"]);
+    const before = writes.length;
+    await sleep(160);
+    assertEquals(writes.length, before);
+  });
+
+  await t.step("hydrate cancels a pending write before restoring stored state", async () => {
+    let saved: string | null = null;
+    let writes = 0;
+    const storage = {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => {
+        saved = value;
+        writes += 1;
+      },
+      removeItem: () => {
+        saved = null;
+      },
+    };
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 100,
+      caches: { metadata: { enabled: true, persist: true }, contexts: { enabled: true, persist: true } },
+    });
+    await cache.refresh(["metadata", "contexts"]);
+    const persisted = saved;
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.hydrate();
+    const before = writes;
+    await sleep(160);
+    assertEquals(writes, before);
+    assertEquals(saved, persisted);
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "1");
+  });
+});

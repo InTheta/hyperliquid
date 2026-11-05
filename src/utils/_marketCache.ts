@@ -73,6 +73,13 @@ export interface HyperliquidMarketCacheOptions {
   storage?: false | "localStorage" | HyperliquidMarketCacheStorage;
   /** Storage key used when persistence is configured. */
   storageKey?: string;
+  /**
+   * Minimum milliseconds between persistence writes caused by live `allDexsAssetCtxs` events. Serialising the
+   * whole cache on every event costs tens of milliseconds and megabytes per write on a full mainnet universe.
+   * Within the window a single trailing write is scheduled; {@link HyperliquidMarketCache.flushPersistence}
+   * writes immediately. Defaults to `0`: persist on every event, as before.
+   */
+  persistThrottleMs?: number;
 }
 
 /** Filters for reading normalized market records from {@link HyperliquidMarketCache}. */
@@ -558,8 +565,14 @@ export class HyperliquidMarketCache {
   private _allDexsClearinghouseStateSubscriptions = new Map<string, ISubscription>();
   private _liveMetadataRefreshRequestedAt = 0;
   private _liveMetadataRefreshPromise: Promise<void> | null = null;
+  private _perpIndex: Map<string, HyperliquidMarketRecord> | null = null;
+  private _perpIndexFor: unknown = null;
+  private _persistThrottleMs: number;
+  private _persistTimer: ReturnType<typeof setTimeout> | null = null;
+  private _lastPersistAt = 0;
 
   constructor(options: HyperliquidMarketCacheOptions) {
+    this._persistThrottleMs = Math.max(0, Number(options.persistThrottleMs) || 0);
     this.transport = options.transport;
     this.subscriptionTransport = options.subscriptionTransport;
     this.dexs = options.dexs ?? false;
@@ -595,6 +608,8 @@ export class HyperliquidMarketCache {
     try {
       const parsed = JSON.parse(text);
       if (!isRecord(parsed) || parsed.version !== CACHE_VERSION || !isRecord(parsed.snapshot)) return;
+      this._cancelPendingPersistence();
+      this._lastPersistAt = 0;
       this._snapshot = {
         ...emptySnapshot(),
         ...(parsed.snapshot as Partial<HyperliquidMarketCacheSnapshot>),
@@ -619,6 +634,8 @@ export class HyperliquidMarketCache {
   /** Clear selected cache groups, or all groups when omitted. */
   clear(keys?: HyperliquidMarketCacheKey | HyperliquidMarketCacheKey[]): void {
     const selected = normalizeKeys(keys);
+    this._cancelPendingPersistence();
+    this._lastPersistAt = 0;
     if (selected.length === 0) {
       this._snapshot = emptySnapshot();
       this._storage?.removeItem(this.storageKey);
@@ -814,7 +831,11 @@ export class HyperliquidMarketCache {
         if (!normalizedCtx) return;
         const record = this._resolvePerpByDexAndLocalIndex(dex, localAssetIndex);
         if (!record) {
-          unmapped.push({ dex, localAssetIndex, context: normalizedCtx });
+          // A live frame has a row for every universe entry, delisted ones included; those never become
+          // markets, so they are expected and must not read as "metadata is stale".
+          if (!this._isDelistedPerp(dex, localAssetIndex)) {
+            unmapped.push({ dex, localAssetIndex, context: normalizedCtx });
+          }
           return;
         }
         this._applyPerpContext(record, normalizedCtx);
@@ -823,7 +844,7 @@ export class HyperliquidMarketCache {
     this._snapshot.unmappedAllDexsAssetCtxs = unmapped;
     this._snapshot.needsMetadataRefresh = unmapped.length > 0;
     this._snapshot.updatedAt.allDexsAssetCtxs = Date.now();
-    this._persist();
+    this._persistLive();
     if (unmapped.length > 0) void this._refreshMetadataForUnmappedLiveData();
   }
 
@@ -1196,12 +1217,46 @@ export class HyperliquidMarketCache {
   }
 
   private _resolvePerpByDexAndLocalIndex(dex: string, localAssetIndex: number): HyperliquidMarketRecord | undefined {
-    for (const record of Object.values(this._snapshot.marketsBySymbol)) {
-      if (record.type === "perp" && record.dex === dex && record.localAssetIndex === localAssetIndex) {
-        return record;
+    // Every rebuild, hydrate and clear replaces `marketsBySymbol` wholesale, so its identity versions the index.
+    const markets = this._snapshot.marketsBySymbol;
+    if (this._perpIndexFor !== markets || !this._perpIndex) {
+      const index = new Map<string, HyperliquidMarketRecord>();
+      for (const record of Object.values(markets)) {
+        if (record.type === "perp") index.set(`${record.dex}\u0000${record.localAssetIndex}`, record);
       }
+      this._perpIndex = index;
+      this._perpIndexFor = markets;
     }
-    return undefined;
+    return this._perpIndex.get(`${dex}\u0000${localAssetIndex}`);
+  }
+
+  private _isDelistedPerp(dex: string, localAssetIndex: number): boolean {
+    const universe = this._snapshot.rawMetaAndAssetCtxsByDex[dex]?.[0]?.universe;
+    return Array.isArray(universe) && universe[localAssetIndex]?.isDelisted === true;
+  }
+
+  private _persistLive(): void {
+    const throttleMs = this._persistThrottleMs;
+    if (!this._storage || throttleMs <= 0) return this._persist();
+    const wait = this._lastPersistAt + throttleMs - Date.now();
+    if (wait <= 0) return this._persist();
+    if (this._persistTimer !== null) return;
+    this._persistTimer = setTimeout(() => {
+      this._persistTimer = null;
+      this._persist();
+    }, wait);
+  }
+
+  /** Write the cache to storage now, cancelling any pending throttled write. Call before the page unloads. */
+  flushPersistence(): void {
+    this._persist();
+  }
+
+  private _cancelPendingPersistence(): void {
+    if (this._persistTimer !== null) {
+      clearTimeout(this._persistTimer);
+      this._persistTimer = null;
+    }
   }
 
   private _resolvePositionMarket(dex: string, coin: string): HyperliquidMarketRecord | undefined {
@@ -1224,7 +1279,7 @@ export class HyperliquidMarketCache {
       rows.forEach((ctx, localAssetIndex) => {
         const record = this._resolvePerpByDexAndLocalIndex(dex, localAssetIndex);
         if (!record) {
-          unmapped.push({ dex, localAssetIndex, context: ctx });
+          if (!this._isDelistedPerp(dex, localAssetIndex)) unmapped.push({ dex, localAssetIndex, context: ctx });
           return;
         }
         this._applyPerpContext(record, ctx);
@@ -1643,7 +1698,9 @@ export class HyperliquidMarketCache {
   }
 
   private _persist(): void {
+    this._cancelPendingPersistence();
     if (!this._storage) return;
+    this._lastPersistAt = Date.now();
     const persisted = emptySnapshot();
     persisted.loadedAt = this._snapshot.loadedAt;
     const marketsForPersistence = this._marketsForPersistence();
