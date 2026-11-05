@@ -1350,4 +1350,96 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
     cache.applyAllDexsAssetCtxs(frame());
     assertEquals(writes.length, 2);
   });
+  await t.step("clear cancels trailing writes and resets the next leading write", async () => {
+    let saved: string | null = null;
+    let writes = 0;
+    const storage = {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => {
+        saved = value;
+        writes += 1;
+      },
+      removeItem: () => {
+        saved = null;
+      },
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.clear();
+    assertEquals(saved, null);
+    const before = writes;
+    await sleep(160);
+    assertEquals(saved, null);
+    assertEquals(writes, before);
+    cache.applyAllDexsAssetCtxs({ ctxs: [] });
+    assertEquals(writes, before + 1);
+    cache.clear();
+  });
+
+  await t.step("selective clear persists once and cancels the pending trailing write", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_key: string, value: string) => {
+        writes.push(value);
+      },
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.clear("allDexsAssetCtxs");
+    const before = writes.length;
+    assertEquals(JSON.parse(writes.at(-1)!).snapshot.rawAllDexsAssetCtxsByDex, {});
+    await sleep(160);
+    assertEquals(writes.length, before);
+  });
+
+  await t.step("immediate refresh supersedes a pending trailing write", async () => {
+    const writes: string[] = [];
+    const storage = {
+      getItem: () => null,
+      setItem: (_key: string, value: string) => {
+        writes.push(value);
+      },
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    await cache.refresh(["metadata", "contexts"]);
+    cache.applyAllDexsAssetCtxs(frame());
+    await cache.refresh(["metadata", "contexts"]);
+    const before = writes.length;
+    await sleep(160);
+    assertEquals(writes.length, before);
+  });
+
+  await t.step("hydrate cancels a pending write before restoring stored state", async () => {
+    let saved: string | null = null;
+    let writes = 0;
+    const storage = {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => {
+        saved = value;
+        writes += 1;
+      },
+      removeItem: () => {
+        saved = null;
+      },
+    };
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 100,
+      caches: { metadata: { enabled: true, persist: true }, contexts: { enabled: true, persist: true } },
+    });
+    await cache.refresh(["metadata", "contexts"]);
+    const persisted = saved;
+    cache.applyAllDexsAssetCtxs(frame());
+    cache.hydrate();
+    const before = writes;
+    await sleep(160);
+    assertEquals(writes, before);
+    assertEquals(saved, persisted);
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "1");
+  });
 });

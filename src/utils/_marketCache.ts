@@ -608,6 +608,8 @@ export class HyperliquidMarketCache {
     try {
       const parsed = JSON.parse(text);
       if (!isRecord(parsed) || parsed.version !== CACHE_VERSION || !isRecord(parsed.snapshot)) return;
+      this._cancelPendingPersistence();
+      this._lastPersistAt = 0;
       this._snapshot = {
         ...emptySnapshot(),
         ...(parsed.snapshot as Partial<HyperliquidMarketCacheSnapshot>),
@@ -632,6 +634,8 @@ export class HyperliquidMarketCache {
   /** Clear selected cache groups, or all groups when omitted. */
   clear(keys?: HyperliquidMarketCacheKey | HyperliquidMarketCacheKey[]): void {
     const selected = normalizeKeys(keys);
+    this._cancelPendingPersistence();
+    this._lastPersistAt = 0;
     if (selected.length === 0) {
       this._snapshot = emptySnapshot();
       this._storage?.removeItem(this.storageKey);
@@ -1245,11 +1249,14 @@ export class HyperliquidMarketCache {
 
   /** Write the cache to storage now, cancelling any pending throttled write. Call before the page unloads. */
   flushPersistence(): void {
+    this._persist();
+  }
+
+  private _cancelPendingPersistence(): void {
     if (this._persistTimer !== null) {
       clearTimeout(this._persistTimer);
       this._persistTimer = null;
     }
-    this._persist();
   }
 
   private _resolvePositionMarket(dex: string, coin: string): HyperliquidMarketRecord | undefined {
@@ -1691,6 +1698,7 @@ export class HyperliquidMarketCache {
   }
 
   private _persist(): void {
+    this._cancelPendingPersistence();
     if (!this._storage) return;
     this._lastPersistAt = Date.now();
     const persisted = emptySnapshot();
