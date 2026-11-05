@@ -1257,8 +1257,12 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
       throw new Error(`Unexpected request: ${String(req.type)}`);
     }
   }
-  const sweeps = (transport: UniverseTransport) => transport.requests.filter((r) => r.type === "metaAndAssetCtxs").length;
-  const make = (transport: UniverseTransport, extra: Partial<ConstructorParameters<typeof HyperliquidMarketCache>[0]> = {}) =>
+  const sweeps = (transport: UniverseTransport) =>
+    transport.requests.filter((r) => r.type === "metaAndAssetCtxs").length;
+  const make = (
+    transport: UniverseTransport,
+    extra: Partial<ConstructorParameters<typeof HyperliquidMarketCache>[0]> = {},
+  ) =>
     new HyperliquidMarketCache({
       transport,
       dexs: true,
@@ -1311,7 +1315,11 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
 
   await t.step("persistThrottleMs coalesces live-frame writes and flushPersistence writes at once", async () => {
     const writes: string[] = [];
-    const storage = { getItem: () => null, setItem: (_k: string, v: string) => void writes.push(v), removeItem: () => {} };
+    const storage = {
+      getItem: () => null,
+      setItem: (_k: string, v: string) => void writes.push(v),
+      removeItem: () => {},
+    };
     const transport = new UniverseTransport();
     const cache = make(transport, { storage, persistThrottleMs: 100 });
     await cache.refresh(["metadata", "contexts"]);
@@ -1330,7 +1338,11 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
 
   await t.step("by default every live frame persists, as before", async () => {
     const writes: string[] = [];
-    const storage = { getItem: () => null, setItem: (_k: string, v: string) => void writes.push(v), removeItem: () => {} };
+    const storage = {
+      getItem: () => null,
+      setItem: (_k: string, v: string) => void writes.push(v),
+      removeItem: () => {},
+    };
     const cache = make(new UniverseTransport(), { storage });
     await cache.refresh(["metadata", "contexts"]);
     writes.length = 0;

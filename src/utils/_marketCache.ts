@@ -829,7 +829,9 @@ export class HyperliquidMarketCache {
         if (!record) {
           // A live frame has a row for every universe entry, delisted ones included; those never become
           // markets, so they are expected and must not read as "metadata is stale".
-          if (!this._isDelistedPerp(dex, localAssetIndex)) unmapped.push({ dex, localAssetIndex, context: normalizedCtx });
+          if (!this._isDelistedPerp(dex, localAssetIndex)) {
+            unmapped.push({ dex, localAssetIndex, context: normalizedCtx });
+          }
           return;
         }
         this._applyPerpContext(record, normalizedCtx);
