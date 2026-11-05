@@ -1313,6 +1313,69 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
     assertEquals(cache.getPerpContext("BTC")?.markPx, "7");
   });
 
+  await t.step("snapshots preserve the JSON data and detach nested records from subsequent live updates", async () => {
+    const cache = make(new UniverseTransport());
+    await cache.refresh(["metadata", "contexts"]);
+    const before = cache.snapshot();
+    const serialized = JSON.parse(JSON.stringify(before));
+    cache.applyAllDexsAssetCtxs({ ctxs: [["", [ctx("17"), ctx("0"), ctx("23")]], ["dexA", [ctx("31"), ctx("0")]]] });
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "17");
+    assertEquals(before.marketsBySubscriptionKey.BTC.context?.markPx, "1");
+    assertEquals(JSON.parse(JSON.stringify(before)), serialized);
+    before.marketsBySubscriptionKey.BTC.context!.markPx = "999";
+    before.rawMetaAndAssetCtxsByDex.main[0].universe[0].name = "EDITED";
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "17");
+    assertEquals(cache.snapshot().rawMetaAndAssetCtxsByDex.main[0].universe[0].name, "BTC");
+  });
+
+  await t.step("raw asset-context persistence remains opt-in independently of context policy", async () => {
+    let saved = "";
+    const cache = make(new UniverseTransport(), {
+      storage: {
+        getItem: () => null,
+        setItem: (_key, value) => {
+          saved = value;
+        },
+        removeItem: () => {},
+      },
+      caches: { contexts: { persist: false }, allDexsAssetCtxs: { persist: true } },
+    });
+    await cache.refresh(["metadata", "contexts"]);
+    const event = frame();
+    event.ctxs[0][1][0].markPx = "17";
+    cache.applyAllDexsAssetCtxs(event);
+    assertEquals(JSON.parse(saved).snapshot.rawAllDexsAssetCtxsByDex.main[0].markPx, "17");
+  });
+
+  await t.step("volatile live contexts do not serialize or schedule metadata persistence", async () => {
+    let writes = 0;
+    const storage = {
+      getItem: () => null,
+      setItem: () => {
+        writes += 1;
+      },
+      removeItem: () => {},
+    };
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 50,
+      caches: {
+        metadata: { enabled: true, persist: true },
+        contexts: { enabled: true, persist: false },
+        allDexsAssetCtxs: { enabled: true, persist: false },
+      },
+    });
+    await cache.refresh(["metadata", "contexts"]);
+    const afterRefresh = writes;
+    for (let i = 0; i < 20; i += 1) cache.applyAllDexsAssetCtxs(frame());
+    assertEquals(cache.getPerpContext("BTC")?.markPx, "1");
+    assertEquals(cache.getPerpContext("dexA:AAA")?.markPx, "3");
+    await sleep(100);
+    assertEquals(writes, afterRefresh);
+    cache.flushPersistence();
+    assertEquals(writes, afterRefresh + 1); // explicit lifecycle flush remains available
+  });
+
   await t.step("persistThrottleMs coalesces live-frame writes and flushPersistence writes at once", async () => {
     const writes: string[] = [];
     const storage = {
@@ -1321,7 +1384,7 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
       removeItem: () => {},
     };
     const transport = new UniverseTransport();
-    const cache = make(transport, { storage, persistThrottleMs: 100 });
+    const cache = make(transport, { storage, persistThrottleMs: 100, caches: { contexts: { persist: true } } });
     await cache.refresh(["metadata", "contexts"]);
     await sleep(120);
     writes.length = 0;
@@ -1336,14 +1399,14 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
     assertEquals(writes.length, 3); // flush cancelled the pending write
   });
 
-  await t.step("by default every live frame persists, as before", async () => {
+  await t.step("opted-in contexts persist every live frame without a throttle", async () => {
     const writes: string[] = [];
     const storage = {
       getItem: () => null,
       setItem: (_k: string, v: string) => void writes.push(v),
       removeItem: () => {},
     };
-    const cache = make(new UniverseTransport(), { storage });
+    const cache = make(new UniverseTransport(), { storage, caches: { contexts: { persist: true } } });
     await cache.refresh(["metadata", "contexts"]);
     writes.length = 0;
     cache.applyAllDexsAssetCtxs(frame());
@@ -1363,7 +1426,11 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
         saved = null;
       },
     };
-    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 100,
+      caches: { contexts: { persist: true } },
+    });
     await cache.refresh(["metadata", "contexts"]);
     cache.applyAllDexsAssetCtxs(frame());
     cache.clear();
@@ -1386,7 +1453,11 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
       },
       removeItem: () => {},
     };
-    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 100,
+      caches: { contexts: { persist: true } },
+    });
     await cache.refresh(["metadata", "contexts"]);
     cache.applyAllDexsAssetCtxs(frame());
     cache.clear("allDexsAssetCtxs");
@@ -1405,7 +1476,11 @@ Deno.test("HyperliquidMarketCache live asset-context frames", async (t) => {
       },
       removeItem: () => {},
     };
-    const cache = make(new UniverseTransport(), { storage, persistThrottleMs: 100 });
+    const cache = make(new UniverseTransport(), {
+      storage,
+      persistThrottleMs: 100,
+      caches: { contexts: { persist: true } },
+    });
     await cache.refresh(["metadata", "contexts"]);
     cache.applyAllDexsAssetCtxs(frame());
     await cache.refresh(["metadata", "contexts"]);
