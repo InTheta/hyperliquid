@@ -1,0 +1,85 @@
+import * as v from "valibot";
+
+// ============================================================
+// API Schemas
+// ============================================================
+
+import type { PerpAssetCtx } from "../../info/_methods/_base/mod.js";
+
+/**
+ * Subscription to context events for a specific perpetual asset.
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions
+ */
+export const ActiveAssetCtxRequest = /* @__PURE__ */ (() => {
+  return v.object({
+    /** Type of subscription. */
+    type: v.literal("activeAssetCtx"),
+    /** Asset symbol (e.g., BTC). */
+    coin: v.string(),
+  });
+})();
+export type ActiveAssetCtxRequest = v.InferOutput<typeof ActiveAssetCtxRequest>;
+
+/**
+ * Event of active perpetual asset context.
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions
+ */
+export type ActiveAssetCtxEvent = {
+  /** Asset symbol (e.g., BTC). */
+  coin: string;
+  /** Context for a specific perpetual asset. */
+  ctx: PerpAssetCtx;
+};
+
+// ============================================================
+// Execution Logic
+// ============================================================
+
+import { parse } from "../../../_base.js";
+import type { ISubscription } from "../../../transport/mod.js";
+import type { SubscriptionConfig, SubscriptionOptions } from "./_base/mod.js";
+
+/** Request parameters for the {@linkcode activeAssetCtx} function. */
+export type ActiveAssetCtxParameters = Omit<v.InferInput<typeof ActiveAssetCtxRequest>, "type">;
+
+/**
+ * Subscribe to context updates for a specific perpetual asset.
+ *
+ * @param config General configuration for Subscription API subscriptions.
+ * @param params Parameters specific to the API subscription.
+ * @param listener A callback function to be called when the event is received.
+ * @param options Options to control the subscription lifecycle.
+ * @return A request-promise that resolves with a {@link ISubscription} object to manage the subscription lifecycle.
+ *
+ * @throws {ValidationError} When the request parameters fail validation (before sending).
+ * @throws {TransportError} When the transport layer throws an error.
+ *
+ * @example
+ * ```ts
+ * import { WebSocketTransport } from "@nktkas/hyperliquid";
+ * import { activeAssetCtx } from "@nktkas/hyperliquid/api/subscription";
+ *
+ * const transport = new WebSocketTransport();
+ *
+ * const sub = await activeAssetCtx(
+ *   { transport },
+ *   { coin: "ETH" },
+ *   (data) => console.log(data),
+ * );
+ * ```
+ *
+ * @see https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions
+ */
+export function activeAssetCtx(
+  config: SubscriptionConfig,
+  params: ActiveAssetCtxParameters,
+  listener: (data: ActiveAssetCtxEvent) => void,
+  options?: SubscriptionOptions,
+): Promise<ISubscription> {
+  const payload = parse(ActiveAssetCtxRequest, { type: "activeAssetCtx", ...params });
+  return config.transport.subscribe<ActiveAssetCtxEvent>(payload.type, payload, (e) => {
+    if (e.detail.coin === payload.coin) {
+      listener(e.detail);
+    }
+  }, options);
+}
