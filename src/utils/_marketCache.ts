@@ -626,9 +626,11 @@ export class HyperliquidMarketCache {
     }
   }
 
-  /** Return a serializable snapshot of current cache state. */
+  /** Return a detached, serializable snapshot of current cache state. */
   snapshot(): HyperliquidMarketCacheSnapshot {
-    return JSON.parse(JSON.stringify(this._snapshot)) as HyperliquidMarketCacheSnapshot;
+    // The lookup tables share records. JSON duplicates those records once per
+    // alias/index and then parses the expanded text on the caller's thread.
+    return structuredClone(this._snapshot);
   }
 
   /** Clear selected cache groups, or all groups when omitted. */
@@ -844,7 +846,9 @@ export class HyperliquidMarketCache {
     this._snapshot.unmappedAllDexsAssetCtxs = unmapped;
     this._snapshot.needsMetadataRefresh = unmapped.length > 0;
     this._snapshot.updatedAt.allDexsAssetCtxs = Date.now();
-    this._persistLive();
+    // A volatile frame must not serialize the full recovery cache merely because
+    // metadata persistence is enabled. Explicit refresh/flush still persists it.
+    if (this._policies.contexts.persist || this._policies.allDexsAssetCtxs.persist) this._persistLive();
     if (unmapped.length > 0) void this._refreshMetadataForUnmappedLiveData();
   }
 
